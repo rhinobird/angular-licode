@@ -1,15 +1,15 @@
 {
-  "name": "angular-licode",
+  "name": "licode",
   "version": "0.2.2",
   "authors": [
     "Juan Ignacio Donoso <jidonoso@gmail.com>"
   ],
   "description": "Angular directive for licode library",
   "license": "MIT",
-  "homepage": "https://github.com/angular-platanus/angular-licode",
+  "homepage": "https://github.com/angular-platanus/licode",
   "repository": {
     "type": "git",
-    "url": "git://github.com/angular-platanus/angular-licode.git"
+    "url": "git://github.com/angular-platanus/licode.git"
   },
   "main": "./src/angular-licode.js",
   "ignore": [
