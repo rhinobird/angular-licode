@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('licode-services')
+angular.module('pl-licode-services')
   .factory('Erizo', function(){
     return window.Erizo;
   });

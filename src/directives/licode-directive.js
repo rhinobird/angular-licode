@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('licode-directives')
+angular.module('pl-licode-directives')
   .directive('licode', function (CameraService, Erizo, $injector) {
     return {
       restrict: 'E',

@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('licode-services')
+angular.module('pl-licode-services')
   .service('CameraService', function(Erizo, $q){
     this.licodeStream = undefined;
     this.currentSource = null;

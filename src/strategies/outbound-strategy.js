@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('licode-strategies')
+angular.module('pl-licode-strategies')
   .factory('outboundStrategy', function(CameraService){
     return function(room){
       this.handleRoomDisconnected = function(){
