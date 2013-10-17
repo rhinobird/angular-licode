@@ -1,0 +1,27 @@
+{
+  "name": "angular-licode",
+  "version": "0.2.2",
+  "authors": [
+    "Juan Ignacio Donoso <jidonoso@gmail.com>"
+  ],
+  "description": "Angular directive for licode library",
+  "license": "MIT",
+  "homepage": "https://github.com/angular-platanus/angular-licode",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/angular-platanus/angular-licode.git"
+  },
+  "main": "./src/angular-licode.js",
+  "ignore": [
+    "**/.*",
+    "Gruntfile.js",
+    "karma.conf.js",
+    "package.json",
+    "test",
+    ".travis.yml"
+  ],
+  "devDependencies": {
+    "angular": "*",
+    "angular-mocks": "*"
+  }
+}
