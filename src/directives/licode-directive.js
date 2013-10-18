@@ -6,15 +6,12 @@ angular.module('pl-licode-directives')
       restrict: 'E',
       replace: true,
       template: '<div></div>',
-      scope: {
-        token: '@'
-      },
       link: function postLink(scope, element, attrs) {
 
         var room, elementId, strategy;
 
         // Set an ID
-        elementId = (scope.token !== '')? 'licode_' + JSON.parse(window.atob(scope.token)).tokenId : 'licode_' + (new Date()).getTime();
+        elementId = (attrs.token !== '')? 'licode_' + JSON.parse(window.atob(attrs.token)).tokenId : 'licode_' + (new Date()).getTime();
         element.attr('id', elementId);
 
         // Set video size
@@ -33,7 +30,7 @@ angular.module('pl-licode-directives')
           });
         }
 
-        scope.$watch('token', function(value, oldValue){
+        attrs.$observe('token', function(value, oldValue){
           console.log('Token changed: ', value, oldValue);
           // Disconnect if exist a room and it's connected
           if(room && room.state === 2){
@@ -57,11 +54,12 @@ angular.module('pl-licode-directives')
           // Get the current strategy
           strategy = new ($injector.get(attrs.flow + 'Strategy'))(room);
 
-          // Room connected handler
+          // Room disconnected handler from strategy
           room.addEventListener('room-disconnected', function(roomEvent) {
             strategy.handleRoomDisconnected();
           });
 
+          // Room connected handler from strategy
           room.addEventListener('room-connected', function(roomEvent) {
             strategy.handleRoomConnected();
           });
