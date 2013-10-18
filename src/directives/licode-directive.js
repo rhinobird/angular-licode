@@ -55,11 +55,11 @@ angular.module('pl-licode-directives')
           }
 
           // Get the current strategy
-          strategy = new $injector.get(attrs.flow + 'Strategy')(room);
+          strategy = new ($injector.get(attrs.flow + 'Strategy'))(room);
 
           // Room connected handler
           room.addEventListener('room-disconnected', function(roomEvent) {
-            strategy.handleRoomDisconected();
+            strategy.handleRoomDisconnected();
           });
 
           room.addEventListener('room-connected', function(roomEvent) {

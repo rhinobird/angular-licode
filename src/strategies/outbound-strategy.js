@@ -18,7 +18,7 @@ angular.module('pl-licode-strategies')
         });
 
         // Publish stream to the room
-        room.publish(CameraService.stream);
+        room.publish(CameraService.licodeStream);
       };
     };
   });
