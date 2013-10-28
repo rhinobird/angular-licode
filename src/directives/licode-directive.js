@@ -8,7 +8,7 @@ angular.module('pl-licode-directives')
       template: '<div></div>',
       link: function postLink(scope, element, attrs) {
 
-        var room, elementId, strategy;
+        var room, stream, elementId, strategy;
 
         // Set an ID
         elementId = (attrs.token !== '')? 'licode_' + JSON.parse(window.atob(attrs.token)).tokenId : 'licode_' + (new Date()).getTime();
@@ -26,43 +26,73 @@ angular.module('pl-licode-directives')
           // Create the stream
           CameraService.start().then(function () {
             CameraService.licodeStream.show(elementId);
-            CameraService.licodeStream.player.video.muted = true;
+
+            // Only on outbound, mute stream to avoid mic noise
+            CameraService.licodeStream.player.video.muted = attrs.mute || true;
           });
         }
 
         attrs.$observe('token', function(value, oldValue){
           console.log('Token changed: ', value, oldValue);
+
           // Disconnect if exist a room and it's connected
           if(room && room.state === 2){
             room.disconnect();
           }
 
-          // Return if not token defined
+          // Disconnect, close and return if not token defined
           if(!value){
+
+            // Close the stream
+            if(stream){
+              stream.removeEventListener('access-accepted');
+              stream.removeEventListener('access-denied');
+              stream.close();
+            }
+
+            // Remove and disconnect from the room
+            if(room){
+              room.removeEventListener('room-connected');
+              room.removeEventListener('room-disconnected');
+              room.disconnect();
+            }
+
             return;
           }
 
-          // Create the new room
+
+          // Create the new room and add the event handlers
           try {
+            // Create the room with the new token
             room = Erizo.Room({token: value});
+
+            // Get the current strategy
+            strategy = new ($injector.get(attrs.flow + 'Strategy'))(room);
+
+            // Room disconnected handler from strategy
+            room.addEventListener('room-disconnected', function(roomEvent) {
+              strategy.handleRoomDisconnected(roomEvent, elementId);
+            });
+
+            // Room connected handler from strategy
+            room.addEventListener('room-connected', function(roomEvent) {
+              strategy.handleRoomConnected(roomEvent, elementId);
+            });
+
+            // Connect to the room
             room.connect();
+
           } catch (e){
             console.log('Invalid token');
+            room = null;
             return;
           }
 
-          // Get the current strategy
-          strategy = new ($injector.get(attrs.flow + 'Strategy'))(room);
+        });
 
-          // Room disconnected handler from strategy
-          room.addEventListener('room-disconnected', function(roomEvent) {
-            strategy.handleRoomDisconnected();
-          });
+        // Mute the current stream
+        attrs.$observe('mute', function(value){
 
-          // Room connected handler from strategy
-          room.addEventListener('room-connected', function(roomEvent) {
-            strategy.handleRoomConnected();
-          });
         });
       }
     };
