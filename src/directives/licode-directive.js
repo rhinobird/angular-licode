@@ -8,7 +8,51 @@ angular.module('pl-licode-directives')
       template: '<div></div>',
       link: function postLink(scope, element, attrs) {
 
-        var room, stream, elementId, strategy;
+        var room, stream, elementId;
+
+        /**
+         * Strategies
+         */
+
+        // Inbound
+        function inboundRoomDisconnected(roomEvent){
+          // Remove the room when disconnected
+          room = null;
+        };
+
+        function inboundRoomConnected(roomEvent){
+          if(roomEvent.streams.length < 1){
+            console.log("no stream in this room");
+            return;
+          }
+
+          // Stream subscribed
+          room.addEventListener('stream-subscribed', function(streamEvent) {
+            stream = streamEvent.stream;
+            stream.show(elementId);
+          });
+
+          // Subscribe to the first stream in the room stream
+          room.subscribe(roomEvent.streams[0]);
+        };
+
+        // Outbound
+        function outboundRoomDisconnected(roomEvent){
+          // Remove the room when disconnected
+          room = null;
+        };
+
+        function outboundRoomConnected(roomEvent){
+          // Stream added to the rrom
+          room.addEventListener('stream-added', function(licodeStreamEvent) {
+            if (CameraService.licodeStream.getID() === licodeStreamEvent.stream.getID()) {
+
+            }
+          });
+
+          // Publish stream to the room
+          room.publish(CameraService.licodeStream);
+        };
 
         // Set an ID
         elementId = (attrs.token !== '')? 'licode_' + JSON.parse(window.atob(attrs.token)).tokenId : 'licode_' + (new Date()).getTime();
@@ -66,17 +110,24 @@ angular.module('pl-licode-directives')
             // Create the room with the new token
             room = Erizo.Room({token: value});
 
-            // Get the current strategy
-            strategy = new ($injector.get(attrs.flow + 'Strategy'))(room);
-
             // Room disconnected handler from strategy
             room.addEventListener('room-disconnected', function(roomEvent) {
-              strategy.handleRoomDisconnected(roomEvent, elementId);
+              if(attrs.flow == 'inbound'){
+                inboundRoomDisconnected(roomEvent);
+              }
+              else{
+                outboundRoomDisconnected(roomEvent);
+              }
             });
 
             // Room connected handler from strategy
             room.addEventListener('room-connected', function(roomEvent) {
-              strategy.handleRoomConnected(roomEvent, elementId);
+              if(attrs.flow == 'inbound'){
+                inboundRoomConnected(roomEvent);
+              }
+              else{
+                outboundRoomConnected(roomEvent);
+              }
             });
 
             // Connect to the room
