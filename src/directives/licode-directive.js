@@ -30,6 +30,9 @@ angular.module('pl-licode-directives')
           room.addEventListener('stream-subscribed', function(streamEvent) {
             stream = streamEvent.stream;
             stream.show(elementId);
+
+            // The the video player mute flag
+            stream.player.video.muted = attrs.mute === "true" || false;
           });
 
           // Subscribe to the first stream in the room stream
@@ -143,7 +146,9 @@ angular.module('pl-licode-directives')
 
         // Mute the current stream
         attrs.$observe('mute', function(value){
-
+          if(stream){
+            stream.player.video.muted = value === "true";
+          }
         });
       }
     };
