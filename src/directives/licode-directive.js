@@ -31,6 +31,9 @@ angular.module('pl-licode-directives')
             stream = streamEvent.stream;
             stream.show(elementId);
 
+            // Trigger event for the video element created
+            scope.$emit('stream-video-created', stream);
+
             // The the video player mute flag
             stream.player.video.muted = attrs.mute === "true" || false;
           });
