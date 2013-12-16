@@ -53,8 +53,13 @@ angular.module('pl-licode-directives')
         function outboundRoomConnected(roomEvent){
           // Stream added to the rrom
           room.addEventListener('stream-added', function(licodeStreamEvent) {
+            // If the stream is the local stream
             if (CameraService.licodeStream.getID() === licodeStreamEvent.stream.getID()) {
 
+              // Start recording this stream
+              if(boolTestRx.test(attrs.record)){
+                room.startRecording(CameraService.licodeStream);
+              }
             }
           });
 
@@ -156,13 +161,26 @@ angular.module('pl-licode-directives')
         // Turn on or off the licode connection
         attrs.$observe('on', function(){
           // Connect
-          if(boolTestRx.test(attrs.on) && attrs.token){
+          if(boolTestRx.test(attrs.record) && attrs.token){
             connect();
           }
 
           // Disconnect
-          if(!boolTestRx.test(attrs.on)){
+          if(!boolTestRx.test(attrs.record)){
             disconnect();
+          }
+        });
+
+        // The on or off the stream recording
+        attrs.$observe('record', function(value){
+          // Start recording
+          if(boolTestRx.test(attrs.record) && attrs.token){
+            room.startRecording(stream);
+          }
+
+          // Stop recording
+          if(!boolTestRx.test(attrs.record) && attrs.token){
+            room.stopRecording(stream);
           }
         });
 
