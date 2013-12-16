@@ -6,6 +6,7 @@ angular.module('pl-licode-directives')
       restrict: 'E',
       replace: true,
       template: '<div></div>',
+      scope: true,
       link: function postLink(scope, element, attrs) {
 
         var room, stream, elementId;
@@ -60,61 +61,14 @@ angular.module('pl-licode-directives')
           room.publish(CameraService.licodeStream);
         };
 
-        // Set an ID
-        elementId = (attrs.token !== '')? 'licode_' + JSON.parse(window.atob(attrs.token)).tokenId : 'licode_' + (new Date()).getTime();
-        element.attr('id', elementId);
-
-        // Set video size
-        element.css({
-          'width': attrs.width,
-          'height': attrs.height
-        });
-
-        // Initiate the stream (camera/mic permissions)
-        if(attrs.flow === "outbound"){
-
-          // Create the stream
-          CameraService.start().then(function () {
-            CameraService.licodeStream.show(elementId);
-
-            // Only on outbound, mute stream to avoid mic noise
-            CameraService.licodeStream.player.video.muted = attrs.mute || true;
-          });
-        }
-
-        attrs.$observe('token', function(value, oldValue){
-          console.log('Token changed: ', value, oldValue);
-
-          // Disconnect if exist a room and it's connected
-          if(room && room.state === 2){
-            room.disconnect();
-          }
-
-          // Disconnect, close and return if not token defined
-          if(!value){
-
-            // Close the stream
-            if(stream){
-              stream.removeEventListener('access-accepted');
-              stream.removeEventListener('access-denied');
-              stream.close();
-            }
-
-            // Remove and disconnect from the room
-            if(room){
-              room.removeEventListener('room-connected');
-              room.removeEventListener('room-disconnected');
-              room.disconnect();
-            }
-
-            return;
-          }
-
+        // Make the connection
+        function connect(token){
+          var token = token || attrs.token;
 
           // Create the new room and add the event handlers
           try {
             // Create the room with the new token
-            room = Erizo.Room({token: value});
+            room = Erizo.Room({token: token});
 
             // Room disconnected handler from strategy
             room.addEventListener('room-disconnected', function(roomEvent) {
@@ -144,13 +98,90 @@ angular.module('pl-licode-directives')
             room = null;
             return;
           }
+        };
 
+        function disconnect(){
+          // Disconnect if exist a room and it's connected
+          if(room && room.state === 2){
+            room.disconnect();
+          }
+
+          // Close the stream
+          if(stream){
+            stream.removeEventListener('access-accepted');
+            stream.removeEventListener('access-denied');
+            stream.close();
+          }
+
+          // Remove and disconnect from the room
+          if(room){
+            room.removeEventListener('room-connected');
+            room.removeEventListener('room-disconnected');
+            room.disconnect();
+          }
+        };
+
+        // Get the connect flag from the attrs
+        function isOn(){
+          var state;
+          try{
+            state = JSON.parse(attrs.on);
+          }
+          catch (e){
+            state = false;
+          }
+          return state;
+        };
+
+        // Set an ID
+        elementId = (attrs.token !== '')? 'licode_' + JSON.parse(window.atob(attrs.token)).tokenId : 'licode_' + (new Date()).getTime();
+        element.attr('id', elementId);
+
+        // Set video size
+        element.css({
+          'width': attrs.width,
+          'height': attrs.height
+        });
+
+        // Initiate the stream (camera/mic permissions)
+        if(attrs.flow === "outbound"){
+
+          // Create the stream
+          CameraService.start().then(function () {
+            CameraService.licodeStream.show(elementId);
+
+            // Only on outbound, mute stream to avoid mic noise
+            CameraService.licodeStream.player.video.muted = attrs.mute || true;
+          });
+        }
+
+        attrs.$observe('token', function(tokenValue, oldTokenValue){
+          console.log('Token changed: ', tokenValue, oldTokenValue, isOn());
+
+          // Connect
+          if(isOn() && tokenValue){
+            connect();
+          }
+
+        });
+
+        // Turn on or off the licode connection
+        attrs.$observe('on', function(){
+          // Connect
+          if(isOn() && attrs.token){
+            connect();
+          }
+
+          // Disconnect
+          if(!isOn()){
+            disconnect();
+          }
         });
 
         // Mute the current stream
         attrs.$observe('mute', function(value){
           if(stream){
-            stream.player.video.muted = value === "true";
+            stream.player.video.muted = value === 'true';
           }
         });
       }
