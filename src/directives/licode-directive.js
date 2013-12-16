@@ -10,6 +10,7 @@ angular.module('pl-licode-directives')
       link: function postLink(scope, element, attrs) {
 
         var room, stream, elementId;
+        var boolTestRx = /yes|true/i;
 
         /**
          * Strategies
@@ -121,18 +122,6 @@ angular.module('pl-licode-directives')
           }
         };
 
-        // Get the connect flag from the attrs
-        function isOn(){
-          var state;
-          try{
-            state = JSON.parse(attrs.on);
-          }
-          catch (e){
-            state = false;
-          }
-          return state;
-        };
-
         // Set an ID
         elementId = (attrs.token !== '')? 'licode_' + JSON.parse(window.atob(attrs.token)).tokenId : 'licode_' + (new Date()).getTime();
         element.attr('id', elementId);
@@ -156,10 +145,9 @@ angular.module('pl-licode-directives')
         }
 
         attrs.$observe('token', function(tokenValue, oldTokenValue){
-          console.log('Token changed: ', tokenValue, oldTokenValue, isOn());
 
           // Connect
-          if(isOn() && tokenValue){
+          if(boolTestRx.test(attrs.on) && tokenValue){
             connect();
           }
 
@@ -168,12 +156,12 @@ angular.module('pl-licode-directives')
         // Turn on or off the licode connection
         attrs.$observe('on', function(){
           // Connect
-          if(isOn() && attrs.token){
+          if(boolTestRx.test(attrs.on) && attrs.token){
             connect();
           }
 
           // Disconnect
-          if(!isOn()){
+          if(!boolTestRx.test(attrs.on)){
             disconnect();
           }
         });
