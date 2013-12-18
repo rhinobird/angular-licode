@@ -140,6 +140,19 @@ angular.module('pl-licode-directives')
         // Initiate the stream (camera/mic permissions)
         if(attrs.flow === "outbound"){
 
+          // The on or off the stream recording
+          attrs.$observe('record', function(value){
+            // Start recording
+            if(boolTestRx.test(attrs.record) && attrs.token){
+              room.startRecording(stream);
+            }
+
+            // Stop recording
+            if(!boolTestRx.test(attrs.record) && attrs.token){
+              room.stopRecording(stream);
+            }
+          });
+
           // Create the stream
           CameraService.start().then(function () {
             CameraService.licodeStream.show(elementId);
@@ -168,19 +181,6 @@ angular.module('pl-licode-directives')
           // Disconnect
           if(!boolTestRx.test(attrs.record)){
             disconnect();
-          }
-        });
-
-        // The on or off the stream recording
-        attrs.$observe('record', function(value){
-          // Start recording
-          if(boolTestRx.test(attrs.record) && attrs.token){
-            room.startRecording(stream);
-          }
-
-          // Stop recording
-          if(!boolTestRx.test(attrs.record) && attrs.token){
-            room.stopRecording(stream);
           }
         });
 
