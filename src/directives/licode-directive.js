@@ -174,12 +174,12 @@ angular.module('pl-licode-directives')
         // Turn on or off the licode connection
         attrs.$observe('on', function(){
           // Connect
-          if(boolTestRx.test(attrs.record) && attrs.token){
+          if(boolTestRx.test(attrs.on) && attrs.token){
             connect();
           }
 
           // Disconnect
-          if(!boolTestRx.test(attrs.record)){
+          if(!boolTestRx.test(attrs.on)){
             disconnect();
           }
         });
