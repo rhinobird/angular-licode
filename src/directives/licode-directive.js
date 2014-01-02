@@ -60,6 +60,9 @@ angular.module('pl-licode-directives')
               if(boolTestRx.test(attrs.record)){
                 room.startRecording(CameraService.licodeStream);
               }
+
+              // Trigger event for the video element created
+              scope.$emit('stream-added', licodeStreamEvent.stream);
             }
           });
 
