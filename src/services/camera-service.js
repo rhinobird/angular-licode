@@ -1,27 +1,30 @@
 'use strict';
 
 angular.module('pl-licode-services')
-  .service('CameraService', function(Erizo, $q){
+  .service('CameraService', function(Erizo, $q, $rootScope){
+
+    var _self = this;
+    var sourcesDeferred = $q.defer();
+
     this.licodeStream = undefined;
     this.currentSource = null;
     this.access = false;
     this.videoSources = [];
 
+    // Get the media sources
+    MediaStreamTrack.getSources(function(sources){
+      // Store just the video ones
+      _self.videoSources = _.filter(sources, function(s){
+        return s.kind === 'video';
+      });
+
+      sourcesDeferred.resolve(_self.videoSources);
+    });
+
     this.start = function(videoSourceIndex){
+      var accessDeferred = $q.defer();
 
-      var _self = this;
-
-      // Prepare promise
-      var deferred = $q.defer();
-
-      // Get the media sources
-      MediaStreamTrack.getSources(function(sources){
-
-        // Store just the video ones
-        _self.videoSources = _.filter(sources, function(s){
-          return s.kind === 'video';
-        });
-
+      sourcesDeferred.promise.then(function(){
         // Store the current video sources
         _self.currentSource = _self.videoSources[videoSourceIndex || 0];
 
@@ -41,23 +44,25 @@ angular.module('pl-licode-services')
         _self.licodeStream.addEventListener('access-accepted', function (e) {
           _self.access = true;
 
-          deferred.resolve(e);
+          $rootScope.$broadcast('camera-access-accepted');
+
+          accessDeferred.resolve(e);
         });
 
         // When denied
         _self.licodeStream.addEventListener('access-denied', function (e) {
           _self.access = false;
 
-          deferred.reject(e);
+          $rootScope.$broadcast('camera-access-denied');
+
+          accessDeferred.reject(e);
         });
 
         // Init camera
         _self.licodeStream.init();
-
       });
 
-      return deferred.promise;
-
+      return accessDeferred.promise;
     };
 
     this.stop = function(){
@@ -70,10 +75,17 @@ angular.module('pl-licode-services')
 
     };
 
-    this.toggleCamera = function(){
+    this.toggleSource = function(sourceIndex){
       this.stop();
 
-      var nextIndex = (_.indexOf(this.videoSources, this.currentSource) + 1) % this.videoSources.length;
-      this.start(nextIndex);
+      var nextIndex;
+
+      if(sourceIndex === undefined){
+        nextIndex = (_.indexOf(this.videoSources, this.currentSource) + 1) % this.videoSources.length;
+      }
+      else{
+        nextIndex = sourceIndex;
+      }
+      return this.start(nextIndex);
     };
   });

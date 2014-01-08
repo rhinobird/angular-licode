@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('pl-licode-directives')
-  .directive('licode', function (CameraService, Erizo, $injector) {
+  .directive('licode', function (CameraService, Erizo, $rootScope) {
     return {
       restrict: 'E',
       replace: true,
@@ -160,8 +160,6 @@ angular.module('pl-licode-directives')
 
           // Create the stream
           CameraService.start().then(function () {
-            CameraService.licodeStream.show(elementId);
-
             // Only on outbound, mute stream to avoid mic noise
             CameraService.licodeStream.player.video.muted = attrs.mute || true;
           });
@@ -194,6 +192,11 @@ angular.module('pl-licode-directives')
           if(stream){
             stream.player.video.muted = value === 'true';
           }
+        });
+
+        $rootScope.$on('camera-access-accepted', function(){
+          // Create the stream video element
+          CameraService.licodeStream.show(elementId);
         });
       }
     };
