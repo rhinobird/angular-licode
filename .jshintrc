@@ -21,6 +21,7 @@
   "globals": {
     "angular": false,
     "_": false,
-    "Erizo": false
+    "Erizo": false,
+    "MediaStreamTrack": false
   }
 }
