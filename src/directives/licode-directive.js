@@ -72,6 +72,8 @@ angular.module('pl-licode-directives')
 
         // Make the connection
         function connect(token){
+          if(room){ return; }
+
           var token = token || attrs.token;
 
           // Create the new room and add the event handlers
