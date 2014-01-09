@@ -39,7 +39,7 @@ angular.module('pl-licode-directives')
             stream.show(elementId);
 
             // Trigger event for the video element created
-            scope.$emit('stream-video-created', stream);
+            scope.$emit('licode-video-created', stream);
 
             // The the video player mute flag
             stream.player.video.muted = attrs.mute === 'true' || false;
@@ -72,7 +72,7 @@ angular.module('pl-licode-directives')
               }
 
               // Trigger event for the video element created
-              scope.$emit('stream-added', licodeStreamEvent.stream);
+              scope.$emit('licode-stream-added', licodeStreamEvent.stream);
             }
           });
 
