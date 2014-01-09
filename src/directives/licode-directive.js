@@ -16,15 +16,20 @@ angular.module('pl-licode-directives')
          * Strategies
          */
 
-        // Inbound
-        function inboundRoomDisconnected(roomEvent){
-          // Remove the room when disconnected
+        /**
+         * Handle disconnection for inbound flow
+         */
+        function inboundRoomDisconnected(){
           room = null;
-        };
+        }
 
+        /**
+         * Handle connection for inbound flow
+         * @param  {event} roomEvent
+         */
         function inboundRoomConnected(roomEvent){
           if(roomEvent.streams.length < 1){
-            console.log("no stream in this room");
+            console.log('no stream in this room');
             return;
           }
 
@@ -37,20 +42,25 @@ angular.module('pl-licode-directives')
             scope.$emit('stream-video-created', stream);
 
             // The the video player mute flag
-            stream.player.video.muted = attrs.mute === "true" || false;
+            stream.player.video.muted = attrs.mute === 'true' || false;
           });
 
           // Subscribe to the first stream in the room stream
           room.subscribe(roomEvent.streams[0]);
-        };
+        }
 
-        // Outbound
-        function outboundRoomDisconnected(roomEvent){
+        /**
+         * Handle disconnection for outbound flow
+         */
+        function outboundRoomDisconnected(){
           // Remove the room when disconnected
           room = null;
-        };
+        }
 
-        function outboundRoomConnected(roomEvent){
+        /**
+         * Handle disconnection for outbound flow
+         */
+        function outboundRoomConnected(){
           // Stream added to the rrom
           room.addEventListener('stream-added', function(licodeStreamEvent) {
             // If the stream is the local stream
@@ -68,13 +78,13 @@ angular.module('pl-licode-directives')
 
           // Publish stream to the room
           room.publish(CameraService.licodeStream);
-        };
+        }
 
         // Make the connection
         function connect(token){
           if(room){ return; }
 
-          var token = token || attrs.token;
+          token = token || attrs.token;
 
           // Create the new room and add the event handlers
           try {
@@ -83,7 +93,7 @@ angular.module('pl-licode-directives')
 
             // Room disconnected handler from strategy
             room.addEventListener('room-disconnected', function(roomEvent) {
-              if(attrs.flow == 'inbound'){
+              if(attrs.flow === 'inbound'){
                 inboundRoomDisconnected(roomEvent);
               }
               else{
@@ -93,7 +103,7 @@ angular.module('pl-licode-directives')
 
             // Room connected handler from strategy
             room.addEventListener('room-connected', function(roomEvent) {
-              if(attrs.flow == 'inbound'){
+              if(attrs.flow === 'inbound'){
                 inboundRoomConnected(roomEvent);
               }
               else{
@@ -105,11 +115,10 @@ angular.module('pl-licode-directives')
             room.connect();
 
           } catch (e){
-            console.log('Invalid token');
             room = null;
             return;
           }
-        };
+        }
 
         function disconnect(){
           // Disconnect if exist a room and it's connected
@@ -130,7 +139,7 @@ angular.module('pl-licode-directives')
             room.removeEventListener('room-disconnected');
             room.disconnect();
           }
-        };
+        }
 
         // Set an ID
         elementId = (attrs.token !== '')? 'licode_' + JSON.parse(window.atob(attrs.token)).tokenId : 'licode_' + (new Date()).getTime();
@@ -143,10 +152,10 @@ angular.module('pl-licode-directives')
         });
 
         // Initiate the stream (camera/mic permissions)
-        if(attrs.flow === "outbound"){
+        if(attrs.flow === 'outbound'){
 
           // The on or off the stream recording
-          attrs.$observe('record', function(value){
+          attrs.$observe('record', function(){
             // Start recording
             if(boolTestRx.test(attrs.record) && attrs.token){
               room.startRecording(stream);
@@ -165,8 +174,8 @@ angular.module('pl-licode-directives')
           });
         }
 
-        attrs.$observe('token', function(tokenValue, oldTokenValue){
-
+        // When the token changes to a valid value triggers connection
+        attrs.$observe('token', function(tokenValue){
           // Connect
           if(boolTestRx.test(attrs.on) && tokenValue){
             connect();
@@ -176,7 +185,7 @@ angular.module('pl-licode-directives')
 
         // Turn on or off the licode connection
         attrs.$observe('on', function(){
-          // Connect
+          // Connect if theres a valid token
           if(boolTestRx.test(attrs.on) && attrs.token){
             connect();
           }
@@ -194,6 +203,7 @@ angular.module('pl-licode-directives')
           }
         });
 
+        // Show the video when the camera service is accepted
         $rootScope.$on('camera-access-accepted', function(){
           // Create the stream video element
           CameraService.licodeStream.show(elementId);

@@ -21,6 +21,11 @@ angular.module('pl-licode-services')
       sourcesDeferred.resolve(_self.videoSources);
     });
 
+    /**
+     * Start the camera
+     * @param  {int} videoSourceIndex
+     * @return {promise}
+     */
     this.start = function(videoSourceIndex){
       var accessDeferred = $q.defer();
 
@@ -65,6 +70,9 @@ angular.module('pl-licode-services')
       return accessDeferred.promise;
     };
 
+    /**
+     * Stop the camera, removes event listeners
+     */
     this.stop = function(){
 
       this.licodeStream.removeEventListener('access-accepted');
@@ -75,6 +83,12 @@ angular.module('pl-licode-services')
 
     };
 
+    /**
+     * Change the camera source,
+     * stop and restart camera service with the new source
+     * @param  {int} sourceIndex
+     * @return {promise}
+     */
     this.toggleSource = function(sourceIndex){
       this.stop();
 
