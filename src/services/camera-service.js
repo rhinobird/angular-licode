@@ -12,14 +12,19 @@ angular.module('pl-licode-services')
     this.videoSources = [];
 
     // Get the media sources
-    MediaStreamTrack.getSources(function(sources){
-      // Store just the video ones
-      _self.videoSources = _.filter(sources, function(s){
-        return s.kind === 'video';
-      });
+    try {
+      MediaStreamTrack.getSources(function(sources){
+        // Store just the video ones
+        _self.videoSources = _.filter(sources, function(s){
+          return s.kind === 'video';
+        });
 
-      sourcesDeferred.resolve(_self.videoSources);
-    });
+        sourcesDeferred.resolve(true);
+      });
+    }
+    catch(e){
+      sourcesDeferred.resolve(false);
+    }
 
     /**
      * Start the camera
@@ -29,18 +34,26 @@ angular.module('pl-licode-services')
     this.start = function(videoSourceIndex){
       var accessDeferred = $q.defer();
 
-      sourcesDeferred.promise.then(function(){
-        // Store the current video sources
-        _self.currentSource = _self.videoSources[videoSourceIndex || 0];
+      sourcesDeferred.promise.then(function(sourcesSupport){
 
-        // Data source
-        var videoConstrain = {
-          optional: [
-            {
-              sourceId : _self.currentSource.id
-            }
-          ]
-        };
+        var videoConstrain;
+
+        if(sourcesSupport){
+          // Store the current video sources
+          _self.currentSource = _self.videoSources[videoSourceIndex || 0];
+
+          // Data source
+          videoConstrain = {
+            optional: [
+              {
+                sourceId : _self.currentSource.id
+              }
+            ]
+          };
+        }
+        else{
+          videoConstrain = true;
+        }
 
         // Create the stream
         _self.licodeStream = Erizo.Stream({audio: true, video: videoConstrain, data: false});
