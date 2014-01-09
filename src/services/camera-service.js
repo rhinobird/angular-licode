@@ -47,20 +47,24 @@ angular.module('pl-licode-services')
 
         // When accepted
         _self.licodeStream.addEventListener('access-accepted', function (e) {
-          _self.access = true;
+          $rootScope.$apply(function(){
+            _self.access = true;
 
-          $rootScope.$broadcast('camera-access-accepted');
+            $rootScope.$broadcast('camera-access-accepted');
 
-          accessDeferred.resolve(e);
+            accessDeferred.resolve(e);
+          });
         });
 
         // When denied
         _self.licodeStream.addEventListener('access-denied', function (e) {
-          _self.access = false;
+          $rootScope.$apply(function(){
+            _self.access = false;
 
-          $rootScope.$broadcast('camera-access-denied');
+            $rootScope.$broadcast('camera-access-denied');
 
-          accessDeferred.reject(e);
+            accessDeferred.reject(e);
+          });
         });
 
         // Init camera
