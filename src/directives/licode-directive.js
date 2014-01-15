@@ -12,6 +12,42 @@ angular.module('pl-licode-directives')
         var room, stream, elementId;
         var boolTestRx = /yes|true/i;
 
+        // Manage and triggers room status
+        function updateRoomStatus(){
+          var status;
+          switch(room.state){
+            case 0:
+              status = 'disconnected';
+              break;
+            case 1:
+              status = 'connecting';
+              break;
+            case 2:
+              status = 'connected';
+              break;
+            default:
+              status = 'disconnected';
+          }
+
+          //id disconnected set room = null
+          if(status === 'disconnected'){
+            room = null;
+          }
+
+          // Trigger the event
+          scope.$emit('licode-room-status-changed', { status: status, room: room });
+        }
+
+        // Manage and triggers room status
+        function updateStreamStatus(status){
+          if(status === 'removed'){
+            stream = null;
+          }
+
+          // Trigger the event
+          scope.$emit('licode-stream-status-changed', { status: status, stream: stream });
+        }
+
         /**
          * Strategies
          */
@@ -20,7 +56,8 @@ angular.module('pl-licode-directives')
          * Handle disconnection for inbound flow
          */
         function inboundRoomDisconnected(){
-          room = null;
+          // Trigger event for room
+          updateRoomStatus();
         }
 
         /**
@@ -28,6 +65,9 @@ angular.module('pl-licode-directives')
          * @param  {event} roomEvent
          */
         function inboundRoomConnected(roomEvent){
+          // Trigger event for room
+          updateRoomStatus();
+
           if(roomEvent.streams.length < 1){
             console.log('no stream in this room');
             return;
@@ -35,7 +75,14 @@ angular.module('pl-licode-directives')
 
           // Stream subscribed
           room.addEventListener('stream-subscribed', function(streamEvent) {
+
+            // Set the stream variable
             stream = streamEvent.stream;
+
+            // Trigger event for stream
+            updateStreamStatus('subscribed');
+
+            // Show the stream in the dom
             stream.show(elementId);
 
             // Trigger event for the video element created
@@ -43,6 +90,12 @@ angular.module('pl-licode-directives')
 
             // The the video player mute flag
             stream.player.video.muted = attrs.mute === 'true' || false;
+          });
+
+          // Stream removed from the rrom
+          room.addEventListener('stream-removed', function(){
+            // Trigger event for stream
+            updateStreamStatus('removed');
           });
 
           // Subscribe to the first stream in the room stream
@@ -53,16 +106,27 @@ angular.module('pl-licode-directives')
          * Handle disconnection for outbound flow
          */
         function outboundRoomDisconnected(){
-          // Remove the room when disconnected
-          room = null;
+          // Trigger event for room
+          updateRoomStatus();
         }
 
         /**
          * Handle disconnection for outbound flow
          */
         function outboundRoomConnected(){
+
+          // Trigger event for room
+          updateRoomStatus();
+
           // Stream added to the rrom
           room.addEventListener('stream-added', function(licodeStreamEvent) {
+
+            // Set the stream variable
+            stream = licodeStreamEvent.stream;
+
+            // Trigger event for stream
+            updateStreamStatus('added');
+
             // If the stream is the local stream
             if (CameraService.licodeStream.getID() === licodeStreamEvent.stream.getID()) {
 
@@ -74,6 +138,12 @@ angular.module('pl-licode-directives')
               // Trigger event for the video element created
               scope.$emit('licode-stream-added', licodeStreamEvent.stream);
             }
+          });
+
+          // Stream removed from the rrom
+          room.addEventListener('stream-removed', function(){
+            // Trigger event for stream
+            updateStreamStatus('removed');
           });
 
           // Publish stream to the room
@@ -114,6 +184,9 @@ angular.module('pl-licode-directives')
             // Connect to the room
             room.connect();
 
+            // Trigger event for room
+            updateRoomStatus();
+
           } catch (e){
             room = null;
             return;
@@ -137,6 +210,8 @@ angular.module('pl-licode-directives')
           if(room){
             room.removeEventListener('room-connected');
             room.removeEventListener('room-disconnected');
+            room.removeEventListener('stream-added');
+            room.removeEventListener('stream-removed');
             room.disconnect();
           }
         }
