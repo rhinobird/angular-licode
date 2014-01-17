@@ -246,6 +246,12 @@ angular.module('pl-licode-directives')
           CameraService.start().then(function () {
             // Only on outbound, mute stream to avoid mic noise
             CameraService.licodeStream.player.video.muted = attrs.mute || true;
+          }, function(){
+            // FIXME: This is a hack, prevent permition denied without asking
+            CameraService.start().then(function () {
+              // Only on outbound, mute stream to avoid mic noise
+              CameraService.licodeStream.player.video.muted = attrs.mute || true;
+            });
           });
         }
 
