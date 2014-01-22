@@ -6,11 +6,14 @@ angular.module('pl-licode-directives')
       restrict: 'E',
       replace: true,
       template: '<div></div>',
-      scope: true,
+      scope: {
+        token: '='
+      },
       link: function postLink(scope, element, attrs) {
 
         var room, stream, elementId;
-        var boolTestRx = /yes|true/i;
+        var boolTrueTestRx = /yes|true/i;
+        var boolFalseTestRx = /no|false/i;
 
         // Manage and triggers room status
         function updateRoomStatus(){
@@ -131,7 +134,7 @@ angular.module('pl-licode-directives')
             if (CameraService.licodeStream.getID() === licodeStreamEvent.stream.getID()) {
 
               // Start recording this stream
-              if(boolTestRx.test(attrs.record)){
+              if(boolTrueTestRx.test(attrs.record)){
                 room.startRecording(CameraService.licodeStream);
               }
 
@@ -154,7 +157,7 @@ angular.module('pl-licode-directives')
         function connect(token){
           if(room){ return; }
 
-          token = token || attrs.token;
+          token = token || scope.token;
 
           // Create the new room and add the event handlers
           try {
@@ -199,6 +202,9 @@ angular.module('pl-licode-directives')
             room.disconnect();
           }
 
+          // Set the token in null, as is not usable again because it was already consumed
+          scope.token = null;
+
           // Close the stream
           if(stream){
             stream.removeEventListener('access-accepted');
@@ -217,7 +223,7 @@ angular.module('pl-licode-directives')
         }
 
         // Set an ID
-        elementId = (attrs.token !== '')? 'licode_' + JSON.parse(window.atob(attrs.token)).tokenId : 'licode_' + (new Date()).getTime();
+        elementId = (scope.token)? 'licode_' + JSON.parse(window.atob(scope.token)).tokenId : 'licode_' + (new Date()).getTime();
         element.attr('id', elementId);
 
         // Set video size
@@ -232,12 +238,12 @@ angular.module('pl-licode-directives')
           // The on or off the stream recording
           attrs.$observe('record', function(){
             // Start recording
-            if(boolTestRx.test(attrs.record) && attrs.token){
+            if(boolTrueTestRx.test(attrs.record) && scope.token){
               room.startRecording(stream);
             }
 
             // Stop recording
-            if(!boolTestRx.test(attrs.record) && attrs.token){
+            if(boolFalseTestRx.test(attrs.record) && scope.token){
               room.stopRecording(stream);
             }
           });
@@ -256,9 +262,9 @@ angular.module('pl-licode-directives')
         }
 
         // When the token changes to a valid value triggers connection
-        attrs.$observe('token', function(tokenValue){
+        scope.$watch('token', function(tokenValue){
           // Connect
-          if(boolTestRx.test(attrs.on) && tokenValue){
+          if(boolTrueTestRx.test(attrs.on) && tokenValue){
             connect();
           }
 
@@ -267,12 +273,12 @@ angular.module('pl-licode-directives')
         // Turn on or off the licode connection
         attrs.$observe('on', function(){
           // Connect if theres a valid token
-          if(boolTestRx.test(attrs.on) && attrs.token){
+          if(boolTrueTestRx.test(attrs.on) && scope.token){
             connect();
           }
 
           // Disconnect
-          if(!boolTestRx.test(attrs.on)){
+          if(boolFalseTestRx.test(attrs.on)){
             disconnect();
           }
         });
