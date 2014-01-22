@@ -78,27 +78,30 @@ angular.module('pl-licode-directives')
 
           // Stream subscribed
           room.addEventListener('stream-subscribed', function(streamEvent) {
+            scope.$apply(function(){
+              // Set the stream variable
+              stream = streamEvent.stream;
 
-            // Set the stream variable
-            stream = streamEvent.stream;
+              // Trigger event for stream
+              updateStreamStatus('subscribed');
 
-            // Trigger event for stream
-            updateStreamStatus('subscribed');
+              // Show the stream in the dom
+              stream.show(elementId);
 
-            // Show the stream in the dom
-            stream.show(elementId);
+              // Trigger event for the video element created
+              scope.$emit('licode-video-created', stream);
 
-            // Trigger event for the video element created
-            scope.$emit('licode-video-created', stream);
-
-            // The the video player mute flag
-            stream.player.video.muted = attrs.mute === 'true' || false;
+              // The the video player mute flag
+              stream.player.video.muted = attrs.mute === 'true' || false;
+            });
           });
 
           // Stream removed from the rrom
           room.addEventListener('stream-removed', function(){
-            // Trigger event for stream
-            updateStreamStatus('removed');
+            scope.$apply(function(){
+              // Trigger event for stream
+              updateStreamStatus('removed');
+            });
           });
 
           // Subscribe to the first stream in the room stream
@@ -123,30 +126,33 @@ angular.module('pl-licode-directives')
 
           // Stream added to the rrom
           room.addEventListener('stream-added', function(licodeStreamEvent) {
+            scope.$apply(function(){
+              // Set the stream variable
+              stream = licodeStreamEvent.stream;
 
-            // Set the stream variable
-            stream = licodeStreamEvent.stream;
+              // Trigger event for stream
+              updateStreamStatus('added');
 
-            // Trigger event for stream
-            updateStreamStatus('added');
+              // If the stream is the local stream
+              if (CameraService.licodeStream.getID() === licodeStreamEvent.stream.getID()) {
 
-            // If the stream is the local stream
-            if (CameraService.licodeStream.getID() === licodeStreamEvent.stream.getID()) {
+                // Start recording this stream
+                if(boolTrueTestRx.test(attrs.record)){
+                  room.startRecording(CameraService.licodeStream);
+                }
 
-              // Start recording this stream
-              if(boolTrueTestRx.test(attrs.record)){
-                room.startRecording(CameraService.licodeStream);
+                // Trigger event for the video element created
+                scope.$emit('licode-stream-added', licodeStreamEvent.stream);
               }
-
-              // Trigger event for the video element created
-              scope.$emit('licode-stream-added', licodeStreamEvent.stream);
-            }
+            });
           });
 
           // Stream removed from the rrom
           room.addEventListener('stream-removed', function(){
-            // Trigger event for stream
-            updateStreamStatus('removed');
+            scope.$apply(function(){
+              // Trigger event for stream
+              updateStreamStatus('removed');
+            });
           });
 
           // Publish stream to the room
@@ -166,22 +172,26 @@ angular.module('pl-licode-directives')
 
             // Room disconnected handler from strategy
             room.addEventListener('room-disconnected', function(roomEvent) {
-              if(attrs.flow === 'inbound'){
-                inboundRoomDisconnected(roomEvent);
-              }
-              else{
-                outboundRoomDisconnected(roomEvent);
-              }
+              scope.$apply(function(){
+                if(attrs.flow === 'inbound'){
+                  inboundRoomDisconnected(roomEvent);
+                }
+                else{
+                  outboundRoomDisconnected(roomEvent);
+                }
+              });
             });
 
             // Room connected handler from strategy
             room.addEventListener('room-connected', function(roomEvent) {
-              if(attrs.flow === 'inbound'){
-                inboundRoomConnected(roomEvent);
-              }
-              else{
-                outboundRoomConnected(roomEvent);
-              }
+              scope.$apply(function(){
+                if(attrs.flow === 'inbound'){
+                  inboundRoomConnected(roomEvent);
+                }
+                else{
+                  outboundRoomConnected(roomEvent);
+                }
+              });
             });
 
             // Connect to the room
