@@ -51,13 +51,13 @@ angular.module('pl-licode-directives')
               status = 'disconnected';
           }
 
+          // Trigger the event
+          scope.$emit('licode-room-status-changed', { status: status, room: room });
+
           //id disconnected set room = null
           if(status === 'disconnected'){
             room = null;
           }
-
-          // Trigger the event
-          scope.$emit('licode-room-status-changed', { status: status, room: room });
         }
 
         // Manage and triggers room status
