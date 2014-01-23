@@ -263,12 +263,12 @@ angular.module('pl-licode-directives')
           // Create the stream
           CameraService.start().then(function () {
             // Only on outbound, mute stream to avoid mic noise
-            CameraService.licodeStream.player.video.muted = scope.mute || true;
+            CameraService.licodeStream.player.video.muted = boolTrueTestRx.test(scope.mute) || true;
           }, function(){
             // FIXME: This is a hack, prevent permition denied without asking
             CameraService.start().then(function () {
               // Only on outbound, mute stream to avoid mic noise
-              CameraService.licodeStream.player.video.muted = scope.mute || true;
+              CameraService.licodeStream.player.video.muted = boolTrueTestRx.test(scope.mute) || true;
             });
           });
         }
@@ -298,7 +298,7 @@ angular.module('pl-licode-directives')
         // Mute the current stream
         scope.$watch('mute', function(value){
           if(stream && stream.player){
-            stream.player.video.muted = value === 'true';
+            stream.player.video.muted = boolTrueTestRx.test(value);
           }
         });
 
