@@ -43,12 +43,13 @@ angular.module('pl-licode-directives')
 
         // Manage and triggers room status
         function updateStreamStatus(status){
+          // Trigger the event
+          scope.$emit('licode-stream-status-changed', { status: status, stream: stream });
+
+          // Set the stream as null
           if(status === 'removed'){
             stream = null;
           }
-
-          // Trigger the event
-          scope.$emit('licode-stream-status-changed', { status: status, stream: stream });
         }
 
         /**
