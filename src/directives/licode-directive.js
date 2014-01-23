@@ -7,7 +7,8 @@ angular.module('pl-licode-directives')
       replace: true,
       template: '<div></div>',
       scope: {
-        token: '='
+        token: '=',
+        mute: '@'
       },
       link: function postLink(scope, element, attrs) {
 
@@ -93,7 +94,7 @@ angular.module('pl-licode-directives')
               scope.$emit('licode-video-created', stream);
 
               // The the video player mute flag
-              stream.player.video.muted = attrs.mute === 'true' || false;
+              stream.player.video.muted = boolTrueTestRx.test(scope.mute);
             });
           });
 
@@ -262,12 +263,12 @@ angular.module('pl-licode-directives')
           // Create the stream
           CameraService.start().then(function () {
             // Only on outbound, mute stream to avoid mic noise
-            CameraService.licodeStream.player.video.muted = attrs.mute || true;
+            CameraService.licodeStream.player.video.muted = scope.mute || true;
           }, function(){
             // FIXME: This is a hack, prevent permition denied without asking
             CameraService.start().then(function () {
               // Only on outbound, mute stream to avoid mic noise
-              CameraService.licodeStream.player.video.muted = attrs.mute || true;
+              CameraService.licodeStream.player.video.muted = scope.mute || true;
             });
           });
         }
@@ -295,8 +296,8 @@ angular.module('pl-licode-directives')
         });
 
         // Mute the current stream
-        attrs.$observe('mute', function(value){
-          if(stream){
+        scope.$watch('mute', function(value){
+          if(stream && stream.player){
             stream.player.video.muted = value === 'true';
           }
         });
