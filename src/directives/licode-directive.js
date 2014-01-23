@@ -16,6 +16,24 @@ angular.module('pl-licode-directives')
         var boolTrueTestRx = /yes|true/i;
         var boolFalseTestRx = /no|false/i;
 
+        /**
+         * Check if a value is truthy or not based on regex
+         * @param  {string}  value the value to check
+         * @return {Boolean}
+         */
+        function isTrue(value){
+          return boolTrueTestRx.test(value);
+        }
+
+        /**
+         * Check if a value is falsy or not based on regex
+         * @param  {string}  value the value to check
+         * @return {Boolean}
+         */
+        function isFalse(value){
+          return boolFalseTestRx.test(value);
+        }
+
         // Manage and triggers room status
         function updateRoomStatus(){
           var status;
@@ -94,7 +112,7 @@ angular.module('pl-licode-directives')
               scope.$emit('licode-video-created', stream);
 
               // The the video player mute flag
-              stream.player.video.muted = boolTrueTestRx.test(scope.mute);
+              stream.player.video.muted = isTrue(scope.mute);
             });
           });
 
@@ -139,7 +157,7 @@ angular.module('pl-licode-directives')
               if (CameraService.licodeStream.getID() === licodeStreamEvent.stream.getID()) {
 
                 // Start recording this stream
-                if(boolTrueTestRx.test(attrs.record)){
+                if(isTrue(attrs.record)){
                   room.startRecording(CameraService.licodeStream);
                 }
 
@@ -250,12 +268,12 @@ angular.module('pl-licode-directives')
           // The on or off the stream recording
           attrs.$observe('record', function(){
             // Start recording
-            if(boolTrueTestRx.test(attrs.record) && scope.token){
+            if(isTrue(attrs.record) && scope.token){
               room.startRecording(stream);
             }
 
             // Stop recording
-            if(boolFalseTestRx.test(attrs.record) && scope.token){
+            if(isFalse(attrs.record) && scope.token){
               room.stopRecording(stream);
             }
           });
@@ -263,12 +281,12 @@ angular.module('pl-licode-directives')
           // Create the stream
           CameraService.start().then(function () {
             // Only on outbound, mute stream to avoid mic noise
-            CameraService.licodeStream.player.video.muted = boolTrueTestRx.test(scope.mute) || true;
+            CameraService.licodeStream.player.video.muted = isTrue(scope.mute) || true;
           }, function(){
             // FIXME: This is a hack, prevent permition denied without asking
             CameraService.start().then(function () {
               // Only on outbound, mute stream to avoid mic noise
-              CameraService.licodeStream.player.video.muted = boolTrueTestRx.test(scope.mute) || true;
+              CameraService.licodeStream.player.video.muted = isTrue(scope.mute) || true;
             });
           });
         }
@@ -276,7 +294,7 @@ angular.module('pl-licode-directives')
         // When the token changes to a valid value triggers connection
         scope.$watch('token', function(tokenValue){
           // Connect
-          if(boolTrueTestRx.test(attrs.on) && tokenValue){
+          if(isTrue(attrs.on) && tokenValue){
             connect();
           }
 
@@ -285,12 +303,12 @@ angular.module('pl-licode-directives')
         // Turn on or off the licode connection
         attrs.$observe('on', function(){
           // Connect if theres a valid token
-          if(boolTrueTestRx.test(attrs.on) && scope.token){
+          if(isTrue(attrs.on) && scope.token){
             connect();
           }
 
           // Disconnect
-          if(boolFalseTestRx.test(attrs.on)){
+          if(isFalse(attrs.on)){
             disconnect();
           }
         });
@@ -298,7 +316,7 @@ angular.module('pl-licode-directives')
         // Mute the current stream
         scope.$watch('mute', function(value){
           if(stream && stream.player){
-            stream.player.video.muted = boolTrueTestRx.test(value);
+            stream.player.video.muted = isTrue(value);
           }
         });
 
