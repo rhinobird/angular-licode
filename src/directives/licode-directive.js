@@ -5,7 +5,7 @@ angular.module('pl-licode-directives')
     return {
       restrict: 'E',
       replace: true,
-      template: '<div></div>',
+      template: '<div class="licode"></div>',
       scope: {
         token: '=',
         mute: '@'
