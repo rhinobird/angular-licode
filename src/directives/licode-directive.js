@@ -36,27 +36,29 @@ angular.module('pl-licode-directives')
 
         // Manage and triggers room status
         function updateRoomStatus(){
-          var status;
-          switch(room.state){
-            case 0:
-              status = 'disconnected';
-              break;
-            case 1:
-              status = 'connecting';
-              break;
-            case 2:
-              status = 'connected';
-              break;
-            default:
-              status = 'disconnected';
-          }
+          if(room){
+            var status;
+            switch(room.state){
+              case 0:
+                status = 'disconnected';
+                break;
+              case 1:
+                status = 'connecting';
+                break;
+              case 2:
+                status = 'connected';
+                break;
+              default:
+                status = 'disconnected';
+            }
 
-          // Trigger the event
-          scope.$emit('licode-room-status-changed', { status: status, room: room });
+            // Trigger the event
+            scope.$emit('licode-room-status-changed', { status: status, room: room });
 
-          //id disconnected set room = null
-          if(status === 'disconnected'){
-            room = null;
+            //id disconnected set room = null
+            if(status === 'disconnected'){
+              room = null;
+            }
           }
         }
 
