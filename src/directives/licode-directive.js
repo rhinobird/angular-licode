@@ -118,10 +118,8 @@ angular.module('pl-licode-directives')
 
           // Stream removed from the rrom
           room.addEventListener('stream-removed', function(){
-            scope.$apply(function(){
-              // Trigger event for stream
-              updateStreamStatus('removed');
-            });
+            // Trigger event for stream
+            updateStreamStatus('removed');
           });
 
           // Subscribe to the first stream in the room stream
@@ -169,10 +167,8 @@ angular.module('pl-licode-directives')
 
           // Stream removed from the rrom
           room.addEventListener('stream-removed', function(){
-            scope.$apply(function(){
-              // Trigger event for stream
-              updateStreamStatus('removed');
-            });
+            // Trigger event for stream
+            updateStreamStatus('removed');
           });
 
           // Publish stream to the room
@@ -192,26 +188,22 @@ angular.module('pl-licode-directives')
 
             // Room disconnected handler from strategy
             room.addEventListener('room-disconnected', function(roomEvent) {
-              scope.$apply(function(){
-                if(attrs.flow === 'inbound'){
-                  inboundRoomDisconnected(roomEvent);
-                }
-                else{
-                  outboundRoomDisconnected(roomEvent);
-                }
-              });
+              if(attrs.flow === 'inbound'){
+                inboundRoomDisconnected(roomEvent);
+              }
+              else{
+                outboundRoomDisconnected(roomEvent);
+              }
             });
 
             // Room connected handler from strategy
             room.addEventListener('room-connected', function(roomEvent) {
-              scope.$apply(function(){
-                if(attrs.flow === 'inbound'){
-                  inboundRoomConnected(roomEvent);
-                }
-                else{
-                  outboundRoomConnected(roomEvent);
-                }
-              });
+              if(attrs.flow === 'inbound'){
+                inboundRoomConnected(roomEvent);
+              }
+              else{
+                outboundRoomConnected(roomEvent);
+              }
             });
 
             // Connect to the room
