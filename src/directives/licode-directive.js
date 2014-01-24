@@ -229,8 +229,11 @@ angular.module('pl-licode-directives')
 
           // Close the stream
           if(stream){
-            stream.removeEventListener('access-accepted');
-            stream.removeEventListener('access-denied');
+
+            if(attrs.flow === 'outbound'){
+              stream.removeEventListener('access-accepted');
+              stream.removeEventListener('access-denied');
+            }
             stream.close();
           }
 
@@ -238,9 +241,15 @@ angular.module('pl-licode-directives')
           if(room){
             room.removeEventListener('room-connected');
             room.removeEventListener('room-disconnected');
-            room.removeEventListener('stream-added');
             room.removeEventListener('stream-removed');
-            room.disconnect();
+
+            if(attrs.flow === 'outbound'){
+              room.removeEventListener('stream-added');
+            }
+            else{
+              room.removeEventListener('stream-subscribed');
+            }
+
           }
         }
 
