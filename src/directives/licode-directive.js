@@ -241,16 +241,18 @@ angular.module('pl-licode-directives')
 
           // Remove and disconnect from the room
           if(room){
-            room.removeEventListener('room-connected');
-            room.removeEventListener('room-disconnected');
-            room.removeEventListener('stream-removed');
+            try{
+              room.removeEventListener('room-connected');
+              room.removeEventListener('room-disconnected');
+              room.removeEventListener('stream-removed');
 
-            if(attrs.flow === 'outbound'){
-              room.removeEventListener('stream-added');
-            }
-            else{
-              room.removeEventListener('stream-subscribed');
-            }
+              if(attrs.flow === 'outbound'){
+                room.removeEventListener('stream-added');
+              }
+              else{
+                room.removeEventListener('stream-subscribed');
+              }
+            } catch (e){}
 
           }
         }
