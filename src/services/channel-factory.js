@@ -9,6 +9,8 @@ angular.module('pl-licode-services')
       this.room = undefined;
 
       this.stream = undefined;
+
+      this.flow = 'outbound';
     }
 
     // Make the connection
@@ -27,21 +29,57 @@ angular.module('pl-licode-services')
 
         // Room connected handler
         _self.room.addEventListener('room-connected', function(roomEvent) {
-          // Create a new stream for data transmision
-          _self.stream = Erizo.Stream({audio: false, video: false, data: true});
+          if(_self.flow === 'inbound'){
+            if(roomEvent.streams.length < 1){
+              console.log('no stream in this room');
+              return;
+            }
 
-          // Add the stream to the room
-          _self.room.publish(_self.stream);
+            var stream = roomEvent.streams[0];
+
+            // Set the stream variable
+            _self.stream = stream;
+
+            // Stream added to the rrom
+            _self.room.addEventListener('stream-subscribed', function(streamEvent, _stream) {
+              deferred.resolve(streamEvent, _stream);
+            });
+
+            // Subscribe to the first stream in the room stream
+            _self.room.subscribe(stream);
+          }
+          else{
+            // Create a new stream for data transmision
+            _self.stream = Erizo.Stream({audio: false, video: false, data: true});
+
+            // Initialize the stream
+            _self.stream.init();
+
+            // Stream added to the rrom
+            _self.room.addEventListener('stream-added', function(streamEvent, stream) {
+              deferred.resolve(streamEvent, stream);
+            });
+            // Add the stream to the room
+            _self.room.publish(_self.stream);
+          }
         });
 
         // Room disconnected handler
-        _self.room.addEventListener('room-disconnected', function(roomEvent) {
-          console.log('room disconnected');
-        });
+        _self.room.addEventListener('room-disconnected', function() {
+          // Remove and disconnect from the room
+          if(_self.room){
+            try{
+              _self.room.removeEventListener('room-connected');
+              _self.room.removeEventListener('room-disconnected');
 
-        // Stream added to the rrom
-        _self.room.addEventListener('stream-added', function(streamEvent, stream) {
-          deferred.resolve(streamEvent, stream);
+              if(_self.flow === 'outbound'){
+                _self.room.removeEventListener('stream-added');
+              }
+              else{
+                _self.room.removeEventListener('stream-subscribed');
+              }
+            } catch (e){}
+          }
         });
 
         // Connect to the room
@@ -68,7 +106,7 @@ angular.module('pl-licode-services')
     };
 
     ChannelSocket.prototype.broadcastEvent = function(event, params){
-      if(this.live){
+      if(this.stream){
         this.stream.sendData({
           'event': event,
           params: params
@@ -76,5 +114,7 @@ angular.module('pl-licode-services')
       }
     };
 
-    return new ChannelSocket();
+    return function(token){
+      return new ChannelSocket(token);
+    };
   });
