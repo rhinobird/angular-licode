@@ -1,122 +1,194 @@
 'use strict';
 
 angular.module('pl-licode-services')
-  .service('CameraService', function(Erizo, $q, $rootScope){
+  .provider('CameraService', function(){
 
-    var _self = this;
-    var sourcesDeferred = $q.defer();
+    var config = {
+      videoConstrain: false,
+      audioConstrain: false,
+      dataConstrain: false
+    }
 
-    this.licodeStream = undefined;
-    this.currentSource = null;
-    this.access = false;
-    this.videoSources = [];
+    var setConstrain = function(target, key, value, optional){
+      var constrain;
+      if(optional){
+        // Get the optional contrains
+        constrain = config[target + "Constrain"].optional
 
-    // Get the media sources
-    try {
-      MediaStreamTrack.getSources(function(sources){
-        // Store just the video ones
-        _self.videoSources = _.filter(sources, function(s){
-          return s.kind === 'video';
+        // Try to find an existing constrain key
+        var constrainValue = _.find(constrain, function(c){
+          return _.contains(_.keys(c), key);
         });
 
-        sourcesDeferred.resolve(true);
-      });
-    }
-    catch(e){
-      sourcesDeferred.resolve(false);
-    }
-
-    /**
-     * Start the camera
-     * @param  {int} videoSourceIndex
-     * @return {promise}
-     */
-    this.start = function(videoSourceIndex){
-      var accessDeferred = $q.defer();
-
-      sourcesDeferred.promise.then(function(sourcesSupport){
-
-        var videoConstrain;
-
-        if(sourcesSupport){
-          // Store the current video sources
-          _self.currentSource = _self.videoSources[videoSourceIndex || 0];
-
-          // Data source
-          videoConstrain = {
-            optional: [
-              {
-                sourceId : _self.currentSource.id
-              }
-            ]
-          };
+        // If the constrain exist update it, if not create it
+        if(constrainValue){
+          constrainValue[key] = value;
         }
         else{
-          videoConstrain = true;
+          var newConstrain = {}
+          newConstrain[key] = value;
+          constrain.push(newConstrain);
         }
-
-        // Create the stream
-        _self.licodeStream = Erizo.Stream({audio: true, video: videoConstrain, data: false});
-
-        // When accepted
-        _self.licodeStream.addEventListener('access-accepted', function (e) {
-          $rootScope.$apply(function(){
-            _self.access = true;
-
-            $rootScope.$broadcast('camera-access-accepted');
-
-            accessDeferred.resolve(e);
-          });
-        });
-
-        // When denied
-        _self.licodeStream.addEventListener('access-denied', function (e) {
-          $rootScope.$apply(function(){
-            _self.access = false;
-
-            $rootScope.$broadcast('camera-access-denied');
-
-            accessDeferred.reject(e);
-          });
-        });
-
-        // Init camera
-        _self.licodeStream.init();
-      });
-
-      return accessDeferred.promise;
-    };
-
-    /**
-     * Stop the camera, removes event listeners
-     */
-    this.stop = function(){
-
-      this.licodeStream.removeEventListener('access-accepted');
-      this.licodeStream.removeEventListener('access-denied');
-      this.licodeStream.close();
-
-      this.access = false;
-
-    };
-
-    /**
-     * Change the camera source,
-     * stop and restart camera service with the new source
-     * @param  {int} sourceIndex
-     * @return {promise}
-     */
-    this.toggleSource = function(sourceIndex){
-      this.stop();
-
-      var nextIndex;
-
-      if(sourceIndex === undefined){
-        nextIndex = (_.indexOf(this.videoSources, this.currentSource) + 1) % this.videoSources.length;
       }
       else{
-        nextIndex = sourceIndex;
+        // Get the mandatory contrains
+        constrain = config[target + "Constrain"].mandatory
+        // Set the constrain
+        constrain[key] = value
       }
-      return this.start(nextIndex);
+    };
+
+
+    return {
+
+      enableVideo: function(state){
+        config.videoConstrain = true;
+      },
+
+      enableAudio: function(state){
+        config.audioConstrain = true;
+      },
+
+      enableData: function(state){
+        config.dataConstrain = true;
+      },
+
+      setVideoConstrain: function(key, value, optional){
+        var vc = config.videoConstrain;
+
+        // If the video constrain is not defined.
+        if(vc.mandatory === undefined && vc.optional === undefined){
+          config.videoConstrain = { mandatory: {}, optional: []}
+        }
+
+        // Set the constrain
+        setConstrain('video', key, value, optional);
+      },
+
+      setAudioConstrain: function(key, value, optional){
+        setConstrain('audio', key, value, optional);
+      },
+
+      setDataConstrain: function(key, value, optional){
+        setConstrain('data', key, value, optional);
+      },
+
+      $get: function(Erizo, $q, $rootScope){
+
+        var provider = this;
+
+        var service = {
+
+          licodeStream: undefined,
+          currentSource: null,
+          access: false,
+          videoSources: [],
+
+          /**
+           * Start the camera
+           * @param  {int} videoSourceIndex
+           * @return {promise}
+           */
+          start: function(videoSourceIndex){
+            var accessDeferred = $q.defer();
+
+            sourcesDeferred.promise.then(function(sourcesSupport){
+
+              if(sourcesSupport){
+                // Store the current video sources
+                service.currentSource = service.videoSources[videoSourceIndex || 0];
+
+                provider.setVideoConstrain('sourceId', service.currentSource.id, true);
+              }
+
+              // Create the stream
+              service.licodeStream = Erizo.Stream({
+                audio: config.audioConstrain,
+                video: config.videoConstrain,
+                data: config.dataConstrain
+              });
+
+              // When accepted
+              service.licodeStream.addEventListener('access-accepted', function (e) {
+                $rootScope.$apply(function(){
+                  service.access = true;
+
+                  $rootScope.$broadcast('camera-access-accepted');
+
+                  accessDeferred.resolve(e);
+                });
+              });
+
+              // When denied
+              service.licodeStream.addEventListener('access-denied', function (e) {
+                $rootScope.$apply(function(){
+                  service.access = false;
+
+                  $rootScope.$broadcast('camera-access-denied');
+
+                  accessDeferred.reject(e);
+                });
+              });
+
+              // Init camera
+              service.licodeStream.init();
+            });
+
+            return accessDeferred.promise;
+          },
+
+          /**
+           * Stop the camera, removes event listeners
+           */
+          stop: function(){
+
+            this.licodeStream.removeEventListener('access-accepted');
+            this.licodeStream.removeEventListener('access-denied');
+            this.licodeStream.close();
+
+            this.access = false;
+
+          },
+
+          /**
+           * Change the camera source,
+           * stop and restart camera service with the new source
+           * @param  {int} sourceIndex
+           * @return {promise}
+           */
+          toggleSource: function(sourceIndex){
+            this.stop();
+
+            var nextIndex;
+
+            if(sourceIndex === undefined){
+              nextIndex = (_.indexOf(this.videoSources, this.currentSource) + 1) % this.videoSources.length;
+            }
+            else{
+              nextIndex = sourceIndex;
+            }
+            return this.start(nextIndex);
+          }
+        }
+
+        var _self = this;
+        var sourcesDeferred = $q.defer();
+
+        // Get the media sources
+        try {
+          MediaStreamTrack.getSources(function(sources){
+            // Store just the video ones
+            service.videoSources = _.filter(sources, function(s){
+              return s.kind === 'video';
+            });
+
+            sourcesDeferred.resolve(true);
+          });
+        }
+        catch(e){
+          sourcesDeferred.resolve(false);
+        }
+        return service;
+      }
     };
   });
