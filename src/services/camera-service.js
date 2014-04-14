@@ -95,8 +95,29 @@ angular.module('pl-licode-services')
             sourcesDeferred.promise.then(function(sourcesSupport){
 
               if(sourcesSupport){
+
+                var defaultSourceIndex;
+                var faceModeSourceIndex;
+
+                // Try to honor facemode constrain when no source is given
+                if(config.videoConstrain && config.videoConstrain.optional){
+                  // Find if there is a facingMode constrain
+                  var constrainValue = _.find(config.videoConstrain.optional, function(c){
+                    return _.contains(_.keys(c), 'facingMode');
+                  });
+
+                  // If there is one, set that mode as the default source
+                  if(constrainValue){
+                    var defaultSource = _.find(service.videoSources, function(s){ return s.facing === constrainValue.facingMode; });
+                    faceModeSourceIndex = _.indexOf(service.videoSources, defaultSource);
+                  }
+                }
+
+                // The default source
+                defaultSourceIndex = (!faceModeSourceIndex || faceModeSourceIndex < 0)? 0 : faceModeSourceIndex;
+
                 // Store the current video sources
-                service.currentSource = service.videoSources[videoSourceIndex || 0];
+                service.currentSource = (videoSourceIndex >= 0)? service.videoSources[videoSourceIndex] : service.videoSources[defaultSourceIndex];
 
                 provider.setVideoConstrain('sourceId', service.currentSource.id, true);
               }
