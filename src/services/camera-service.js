@@ -83,6 +83,7 @@ angular.module('pl-licode-services')
           currentSource: null,
           access: false,
           videoSources: [],
+          isHD: false,
 
           /**
            * Start the camera
@@ -189,6 +190,31 @@ angular.module('pl-licode-services')
               nextIndex = sourceIndex;
             }
             return this.start(nextIndex);
+          },
+
+          /**
+           * Change the camera resolution,
+           * stop and restart camera service with the resolution
+           * @param  {bool} toggleValue
+           * @return {promise}
+           */
+          toggleHD: function(toggleValue){
+            this.stop();
+
+            // The a flag to that expose if the stream is hd
+            service.isHD = (toggleValue === undefined)? !service.isHD : toggleValue;
+
+            // The the new resolution
+            if(service.isHD){
+              provider.setVideoConstrain('minWidth', '1280');
+              provider.setVideoConstrain('minHeight', '720');
+            }
+            else{
+              provider.setVideoConstrain('minWidth', '640');
+              provider.setVideoConstrain('minHeight', '360');
+            }
+
+            return this.start(_.indexOf(this.videoSources, this.currentSource));
           }
         }
 
