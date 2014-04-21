@@ -117,7 +117,7 @@ angular.module('pl-licode-services')
                 defaultSourceIndex = (!faceModeSourceIndex || faceModeSourceIndex < 0)? 0 : faceModeSourceIndex;
 
                 // Store the current video sources
-                service.currentSource = (videoSourceIndex >= 0)? service.videoSources[videoSourceIndex] : service.videoSources[defaultSourceIndex];
+                service.currentSource = (videoSourceIndex != null && videoSourceIndex >= 0)? service.videoSources[videoSourceIndex] : service.videoSources[defaultSourceIndex];
 
                 provider.setVideoConstrain('sourceId', service.currentSource.id, true);
               }
