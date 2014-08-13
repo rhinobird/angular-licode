@@ -137,7 +137,7 @@ angular.module('pl-licode-directives')
         }
 
         /**
-         * Handle disconnection for outbound flow
+         * Handle connection for outbound flow
          */
         function outboundRoomConnected(){
 
@@ -158,11 +158,11 @@ angular.module('pl-licode-directives')
 
                 // Start recording this stream
                 if(isTrue(attrs.record)){
-                  room.startRecording(CameraService.licodeStream);
+                  room.startRecording(CameraService.licodeStream, function(recordingId){
+                    // Trigger event for stream started recording
+                    scope.$emit('licode-stream-recording-started', recordingId);
+                  });
                 }
-
-                // Trigger event for the video element created
-                scope.$emit('licode-stream-added', licodeStreamEvent.stream);
               }
             });
           });
@@ -274,12 +274,18 @@ angular.module('pl-licode-directives')
           attrs.$observe('record', function(){
             // Start recording
             if(isTrue(attrs.record) && scope.token){
-              room.startRecording(stream);
+              room.startRecording(stream, function(recordingId){
+                // Trigger event for stream started recording
+                scope.$emit('licode-stream-recording-started', recordingId);
+              });
             }
 
             // Stop recording
             if(isFalse(attrs.record) && scope.token){
-              room.stopRecording(stream);
+              room.stopRecording(stream, function(){
+                // Trigger event for stream stoped recording
+                scope.$emit('licode-stream-recording-stopped');
+              });
             }
           });
 
