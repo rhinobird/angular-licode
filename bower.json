@@ -6,10 +6,10 @@
   ],
   "description": "Angular directive for licode library",
   "license": "MIT",
-  "homepage": "https://github.com/angular-platanus/licode",
+  "homepage": "https://github.com/rhinobird/angular-licode",
   "repository": {
     "type": "git",
-    "url": "git://github.com/angular-platanus/licode.git"
+    "url": "git://github.com/rhinobird/angular-licode.git"
   },
   "main": "./src/angular-licode.js",
   "ignore": [
