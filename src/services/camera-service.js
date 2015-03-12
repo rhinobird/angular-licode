@@ -126,7 +126,15 @@ angular.module('pl-licode-services')
               // Create the stream
               service.licodeStream = Erizo.Stream({
                 audio: config.audioConstrain,
-                video: config.videoConstrain,
+                // Temporary Fix
+                //
+                // Chrome has disabled constraints for versions >= 41
+                // Until we know which versions/broswers implement it
+                // or if it will become a standard or not we skip this
+                // constraints.
+                //
+                // video: config.videoConstrain,
+                video: true,
                 data: config.dataConstrain
               });
 
