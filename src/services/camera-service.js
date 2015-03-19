@@ -9,9 +9,15 @@ angular.module('pl-licode-services')
       dataConstrain: false
     }
 
-    var setConstrain = function(target, key, value, optional){
+    var setConstrain = function(target, key, value, level){
+
+      if (level != 'optional' && level != 'mandatory' && level != 'licode') {
+        throw "No video constrain level defined using [licode, mandatory, optional]";
+      }
+
       var constrain;
-      if(optional){
+
+      if(level == 'optional'){
         // Get the optional contrains
         constrain = config[target + "Constrain"].optional
 
@@ -30,7 +36,10 @@ angular.module('pl-licode-services')
           constrain.push(newConstrain);
         }
       }
-      else{
+      else if (level == 'licode') {
+        constrain = config[target + "Constrain"]
+        constrain[key] = value
+      } else {
         // Get the mandatory contrains
         constrain = config[target + "Constrain"].mandatory
         // Set the constrain
@@ -53,7 +62,7 @@ angular.module('pl-licode-services')
         config.dataConstrain = true;
       },
 
-      setVideoConstrain: function(key, value, optional){
+      setVideoConstrain: function(key, value, level){
         var vc = config.videoConstrain;
 
         // If the video constrain is not defined.
@@ -62,7 +71,7 @@ angular.module('pl-licode-services')
         }
 
         // Set the constrain
-        setConstrain('video', key, value, optional);
+        setConstrain('video', key, value, level);
       },
 
       setAudioConstrain: function(key, value, optional){
@@ -120,21 +129,15 @@ angular.module('pl-licode-services')
                 // Store the current video sources
                 service.currentSource = (videoSourceIndex != null && videoSourceIndex >= 0)? service.videoSources[videoSourceIndex] : service.videoSources[defaultSourceIndex];
 
-                provider.setVideoConstrain('sourceId', service.currentSource.id, true);
+                provider.setVideoConstrain('sourceId', service.currentSource.id, 'optional');
               }
 
               // Create the stream
               service.licodeStream = Erizo.Stream({
                 audio: config.audioConstrain,
-                // Temporary Fix
-                //
-                // Chrome has disabled constraints for versions >= 41
-                // Until we know which versions/broswers implement it
-                // or if it will become a standard or not we skip this
-                // constraints.
-                //
-                // video: config.videoConstrain,
                 video: true,
+                videoSize: config.videoConstrain.videoSize,
+                videoOptions: {mandatory: config.videoConstrain.mandatory, optional: config.videoConstrain.optional},
                 data: config.dataConstrain
               });
 
