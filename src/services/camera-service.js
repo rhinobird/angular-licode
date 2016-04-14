@@ -177,7 +177,12 @@ angular.module('pl-licode-services')
 
             this.licodeStream.removeEventListener('access-accepted');
             this.licodeStream.removeEventListener('access-denied');
-            this.licodeStream.close();
+            if (this.licodeStream.stream !== undefined) {
+              this.licodeStream.stream.getTracks().forEach(function (track) {
+                track.stop();
+              });
+            }
+            this.licodeStream.stream = undefined;
 
             this.access = false;
 
