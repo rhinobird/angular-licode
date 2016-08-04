@@ -158,9 +158,9 @@ angular.module('pl-licode-directives')
 
                 // Start recording this stream
                 if(isTrue(attrs.record)){
-                  room.startRecording(CameraService.licodeStream, function(recordingId){
+                  room.startRecording(CameraService.licodeStream, function(recordingId, error, timestamp){
                     // Trigger event for stream started recording
-                    scope.$emit('licode-stream-recording-started', recordingId);
+                    scope.$emit('licode-stream-recording-started', recordingId, timestamp);
                   });
                 }
               }
