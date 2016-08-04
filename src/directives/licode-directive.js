@@ -274,9 +274,9 @@ angular.module('pl-licode-directives')
           attrs.$observe('record', function(){
             // Start recording
             if(isTrue(attrs.record) && scope.token){
-              room.startRecording(stream, function(recordingId){
+              room.startRecording(stream, function(recordingId, error, timestamp){
                 // Trigger event for stream started recording
-                scope.$emit('licode-stream-recording-started', recordingId);
+                scope.$emit('licode-stream-recording-started', recordingId, timestamp);
               });
             }
 
