@@ -75,6 +75,13 @@ angular.module('pl-licode-services')
       },
 
       setAudioConstrain: function(key, value, optional){
+        var ac = config.audioConstrain;
+
+        // If the audio constrain is not defined.
+        if(ac.mandatory === undefined && ac.optional === undefined){
+          config.audioConstrain = { mandatory: {}, optional: []}
+        }
+
         setConstrain('audio', key, value, optional);
       },
 
