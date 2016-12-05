@@ -174,7 +174,7 @@ angular.module('pl-licode-directives')
           });
 
           // Publish stream to the room
-          room.publish(CameraService.licodeStream, {maxVideoBW: 1200, minVideoBW: 300});
+          room.publish(CameraService.licodeStream, {maxVideoBW: 1200, minVideoBW: 600, maxAudioBW: 96});
         }
 
         // Make the connection
