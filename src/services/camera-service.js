@@ -144,6 +144,7 @@ angular.module('pl-licode-services')
                 audio: config.audioConstrain,
                 video: true,
                 videoSize: config.videoConstrain.videoSize,
+                // DEPRECATED videoOptions IN LICODE WILL NOT TAKE ANY EFFECT
                 videoOptions: {mandatory: config.videoConstrain.mandatory, optional: config.videoConstrain.optional},
                 data: config.dataConstrain
               });
