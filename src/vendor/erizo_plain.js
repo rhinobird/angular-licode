@@ -3902,7 +3902,6 @@ Erizo.PublisherEvent = function (spec) {
 
     return that;
 };
-/*global console*/
 'use strict';
 var Erizo = Erizo || {};
 
@@ -3920,6 +3919,8 @@ Erizo.FcStack = function (spec) {
     that.peerConnection = {};
     that.desc = {};
     that.signalCallback = undefined;
+
+    var L = L || {};
 
     that.close = function() {
         L.Logger.info('Close FcStack');
@@ -4004,7 +4005,8 @@ Erizo.ChromeStableStack = function (spec) {
       return 'a=ssrc-group:FID ' + spatialLayerId + ' ' + spatialLayerIdRtx + '\r\n';
     };
 
-    var addSpatialLayer = function (cname, msid, mslabel, label, spatialLayerId, spatialLayerIdRtx) {
+    var addSpatialLayer = function (cname, msid, mslabel, label, spatialLayerId,
+        spatialLayerIdRtx) {
       return  'a=ssrc:' + spatialLayerId + ' cname:' + cname +'\r\n' +
               'a=ssrc:' + spatialLayerId + ' msid:' + msid + '\r\n' +
               'a=ssrc:' + spatialLayerId + ' mslabel:' + mslabel + '\r\n' +
@@ -4023,9 +4025,6 @@ Erizo.ChromeStableStack = function (spec) {
       if (!spec.simulcast) {
         return sdp;
       }
-
-      // TODO(javier): Remove this message once Simulcast is complete
-      L.Logger.warning('Simulcast is still WIP, please don\'t use it in production');
 
       // TODO(javier): Improve the way we check for current video ssrcs
       matchGroup = sdp.match(/a=ssrc-group:FID ([0-9]*) ([0-9]*)\r?\n/);
@@ -4059,13 +4058,13 @@ Erizo.ChromeStableStack = function (spec) {
       result = addSim(spatialLayers);
       var spatialLayerId;
       var spatialLayerIdRtx;
-      for (var spatialLayerIndex in spatialLayers) {
+      for (let spatialLayerIndex in spatialLayers) {
         spatialLayerId = spatialLayers[spatialLayerIndex];
         spatialLayerIdRtx = spatialLayersRtx[spatialLayerIndex];
         result += addGroup(spatialLayerId, spatialLayerIdRtx);
       }
 
-      for (var spatialLayerIndex in spatialLayers) {
+      for (let spatialLayerIndex in spatialLayers) {
         spatialLayerId = spatialLayers[spatialLayerIndex];
         spatialLayerIdRtx = spatialLayersRtx[spatialLayerIndex];
         result += addSpatialLayer(cname, msid, mslabel, label, spatialLayerId, spatialLayerIdRtx);
@@ -4220,7 +4219,7 @@ Erizo.ChromeStableStack = function (spec) {
 
             localDesc.sdp = setMaxBW(localDesc.sdp);
             if (config.Sdp || config.maxAudioBW){
-                L.Logger.debug ('Updating with SDP renegotiation', spec.maxVideoBW);
+                L.Logger.debug ('Updating with SDP renegotiation', spec.maxVideoBW, spec.maxAudioBW);
                 that.peerConnection.setLocalDescription(localDesc, function () {
                     remoteDesc.sdp = setMaxBW(remoteDesc.sdp);
                     that.peerConnection.setRemoteDescription(
@@ -4251,7 +4250,8 @@ Erizo.ChromeStableStack = function (spec) {
 
     that.createOffer = function (isSubscribe) {
         if (isSubscribe === true) {
-            that.peerConnection.createOffer(setLocalDesc.bind(null, isSubscribe), errorCallback, that.mediaConstraints);
+            that.peerConnection.createOffer(setLocalDesc.bind(null, isSubscribe), errorCallback,
+                that.mediaConstraints);
         } else {
             that.mediaConstraints = {
                 mandatory: {
@@ -4259,7 +4259,8 @@ Erizo.ChromeStableStack = function (spec) {
                     'OfferToReceiveAudio': false
                 }
             };
-            that.peerConnection.createOffer(setLocalDesc.bind(null, isSubscribe), errorCallback, that.mediaConstraints);
+            that.peerConnection.createOffer(setLocalDesc.bind(null, isSubscribe), errorCallback,
+                that.mediaConstraints);
         }
 
     };
@@ -4319,6 +4320,10 @@ Erizo.ChromeStableStack = function (spec) {
                     obj = msg.candidate;
                 } else {
                     obj = JSON.parse(msg.candidate);
+                }
+                if (obj.candidate === 'end') {
+                    // ignore the end candidate for chrome
+                    return;
                 }
                 obj.candidate = obj.candidate.replace(/a=/g, '');
                 obj.sdpMLineIndex = parseInt(obj.sdpMLineIndex);
@@ -4764,11 +4769,23 @@ Erizo.FirefoxStack = function (spec) {
       if (!spec.video || !spec.simulcast) {
         return;
       }
-      var sender = that.peerConnection.getSenders().forEach(function(sender) {
+      that.peerConnection.getSenders().forEach(function(sender) {
         if (sender.track.kind === 'video') {
-          parameters = sender.getParameters();
-          sender.setParameters({encodings: [{ rid: "spam", active: true, priority: "high", maxBitrate: 40000, maxHeight: 640, maxWidth: 480 },
-                                            { rid: "egg", active: true, priority: "medium", maxBitrate: 10000, maxHeight: 320, maxWidth: 240 }]});
+          sender.getParameters();
+          sender.setParameters({encodings: [{ 
+            rid: 'spam', 
+            active: true, 
+            priority: 'high', 
+            maxBitrate: 40000, 
+            maxHeight: 640, 
+            maxWidth: 480 },{ 
+            rid: 'egg', 
+            active: true, 
+            priority: 'medium', 
+            maxBitrate: 10000, 
+            maxHeight: 320, 
+            maxWidth: 240 }]
+          });
         }
       });
     };
@@ -5249,7 +5266,7 @@ Erizo.Connection = function (spec) {
     } else if (that.browser === 'bowser'){
         L.Logger.debug('Bowser Stack');
         that = Erizo.BowserStack(spec);
-    } else if (that.browser === 'chrome-stable') {
+    } else if (that.browser === 'chrome-stable' || that.browser === 'electron') {
         L.Logger.debug('Chrome Stable Stack');
         that = Erizo.ChromeStableStack(spec);
     } else {
@@ -5278,8 +5295,9 @@ Erizo.getBrowser = function () {
     } else if (window.navigator.userAgent.match('Bowser') !== null){
         browser = 'bowser';
     } else if (window.navigator.userAgent.match('Chrome') !== null) {
-        if (window.navigator.appVersion.match(/Chrome\/([\w\W]*?)\./)[1] >= 26) {
-            browser = 'chrome-stable';
+        browser = 'chrome-stable';
+        if (window.navigator.userAgent.match('Electron') !== null) {
+            browser = 'electron'
         }
     } else if (window.navigator.userAgent.match('Safari') !== null) {
         browser = 'bowser';
@@ -5288,7 +5306,6 @@ Erizo.getBrowser = function () {
     }
     return browser;
 };
-
 
 Erizo.GetUserMedia = function (config, callback, error) {
     var promise;
@@ -5300,6 +5317,14 @@ Erizo.GetUserMedia = function (config, callback, error) {
     if (config.screen) {
         L.Logger.debug('Screen access requested');
         switch (Erizo.getBrowser()) {
+            case 'electron' :
+                 L.Logger.debug('Screen sharing in Electron');
+                var screenConfig = {};
+                screenConfig.video = config.video || {};
+                screenConfig.video.mandatory = config.video.mandatory || {};
+                screenConfig.video.mandatory.chromeMediaSource = 'screen';
+                navigator.getMedia(screenConfig, callback, error);
+                break;
             case 'mozilla':
                 L.Logger.debug('Screen sharing in Firefox');
                 var screenCfg = {};
@@ -5322,42 +5347,50 @@ Erizo.GetUserMedia = function (config, callback, error) {
                 break;
 
             case 'chrome-stable':
-                L.Logger.debug('Screen sharing in Chrome');
-                // Default extensionId - this extension is only usable in our server,
-                // please make your own extension based on the code in
-                // erizo_controller/erizoClient/extras/chrome-extension
-                var extensionId = 'okeephmleflklcdebijnponpabbmmgeo';
-                if (config.extensionId){
-                    L.Logger.debug('extensionId supplied, using ' + config.extensionId);
-                    extensionId = config.extensionId;
-                }
-                L.Logger.debug('Screen access on chrome stable, looking for extension');
-                try {
-                    chrome.runtime.sendMessage(extensionId, {getStream: true}, function (response){
-                        var theConfig = {};
-                        if (response === undefined){
-                            L.Logger.error('Access to screen denied');
-                            var theError = {code:'Access to screen denied'};
-                            error(theError);
-                            return;
-                        }
-                        var theId = response.streamId;
-                        if(config.video.mandatory !== undefined){
-                            theConfig.video = config.video;
-                            theConfig.video.mandatory.chromeMediaSource = 'desktop';
-                            theConfig.video.mandatory.chromeMediaSourceId = theId;
+            L.Logger.debug('Screen sharing in Chrome');
+                if (config.desktopStreamId){
+                    var theConfig = {};
+                    theConfig.video = config.video || {};
+                    theConfig.video.mandatory.chromeMediaSource = 'desktop';
+                    theConfig.video.mandatory.chromeMediaSourceId = config.desktopStreamId;
+                    navigator.getMedia(theConfig, callback, error);
+                } else {
+                  // Default extensionId - this extension is only usable in our server,
+                  // please make your own extension based on the code in
+                  // erizo_controller/erizoClient/extras/chrome-extension
+                  var extensionId = 'okeephmleflklcdebijnponpabbmmgeo';
+                  if (config.extensionId){
+                      L.Logger.debug('extensionId supplied, using ' + config.extensionId);
+                      extensionId = config.extensionId;
+                  }
+                  L.Logger.debug('Screen access on chrome stable, looking for extension');
+                  try {
+                      chrome.runtime.sendMessage(extensionId, {getStream: true}, function (response){
+                          var theConfig = {};
+                          if (response === undefined){
+                              L.Logger.error('Access to screen denied');
+                              var theError = {code:'Access to screen denied'};
+                              error(theError);
+                              return;
+                          }
+                          var theId = response.streamId;
+                          if(config.video.mandatory !== undefined){
+                              theConfig.video = config.video;
+                              theConfig.video.mandatory.chromeMediaSource = 'desktop';
+                              theConfig.video.mandatory.chromeMediaSourceId = theId;
 
-                        }else{
-                            theConfig = {video: {mandatory: {chromeMediaSource: 'desktop',
-                                                             chromeMediaSourceId: theId }}};
-                        }
-                        navigator.getMedia(theConfig, callback, error);
-                    });
-                } catch(e) {
-                    L.Logger.debug('Screensharing plugin is not accessible ');
-                    var theError = {code:'no_plugin_present'};
-                    error(theError);
-                    return;
+                          }else{
+                              theConfig = {video: {mandatory: {chromeMediaSource: 'desktop',
+                                                               chromeMediaSourceId: theId }}};
+                          }
+                          navigator.getMedia(theConfig, callback, error);
+                      });
+                  } catch(e) {
+                      L.Logger.debug('Screensharing plugin is not accessible ');
+                      var theError = {code:'no_plugin_present'};
+                      error(theError);
+                      return;
+                  }
                 }
                 break;
 
@@ -5369,15 +5402,24 @@ Erizo.GetUserMedia = function (config, callback, error) {
             L.Logger.error('Video/audio streams not supported in erizofc yet');
         } else {
             if (config.video && Erizo.getBrowser() === 'mozilla') {
-                var ffConfig = {video:{}, audio: config.audio, screen: config.screen}
+                var ffConfig = {video:{}, audio: config.audio, screen: config.screen};
+                if (config.audio.mandatory !== undefined) {
+                    var audioCfg = config.audio.mandatory;
+                    if (audioCfg.sourceId) {
+                        ffConfig.audio.deviceId = audioCfg.sourceId;
+                    }
+                }
                 if (config.video.mandatory !== undefined) {
                     var videoCfg = config.video.mandatory;
                     ffConfig.video.width = {min: videoCfg.minWidth, max: videoCfg.maxWidth};
                     ffConfig.video.height = {min: videoCfg.minHeight, max: videoCfg.maxHeight};
+                    if (videoCfg.sourceId) {
+                        ffConfig.video.deviceId = videoCfg.sourceId;
+                    }
 
                 }
                 if (config.video.optional !== undefined) {
-                    ffConfig.video.frameRate =  config.video.optional[1].maxFrameRate
+                    ffConfig.video.frameRate =  config.video.optional[1].maxFrameRate;
                 }
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     promise = navigator.mediaDevices.getUserMedia(ffConfig).then(callback);
@@ -5413,6 +5455,7 @@ Erizo.Stream = function (spec) {
     that.videoSize = spec.videoSize;
     that.videoFrameRate = spec.videoFrameRate;
     that.extensionId = spec.extensionId;
+    that.desktopStreamId = spec.desktopStreamId;
 
     if (that.videoSize !== undefined &&
         (!(that.videoSize instanceof Array) ||
@@ -5485,9 +5528,9 @@ Erizo.Stream = function (spec) {
           L.Logger.info('Requested access to local media');
           var videoOpt = spec.video;
           if (videoOpt === true || spec.screen === true) {
-              videoOpt = {}
+              videoOpt = videoOpt === true ? {}: videoOpt;
               if (that.videoSize !== undefined) {
-                  videoOpt.mandatory = {};
+                  videoOpt.mandatory = videoOpt.mandatory || {};
                   videoOpt.mandatory.minWidth = that.videoSize[0];
                   videoOpt.mandatory.minHeight = that.videoSize[1];
                   videoOpt.mandatory.maxWidth = that.videoSize[2];
@@ -5495,7 +5538,7 @@ Erizo.Stream = function (spec) {
               }
 
               if (that.videoFrameRate !== undefined) {
-                  videoOpt.optional = []
+                  videoOpt.optional = videoOpt.optional || [];
                   videoOpt.optional.push({minFrameRate: that.videoFrameRate[0]});
                   videoOpt.optional.push({maxFrameRate: that.videoFrameRate[1]});
               }
@@ -5507,8 +5550,8 @@ Erizo.Stream = function (spec) {
                      audio: spec.audio,
                      fake: spec.fake,
                      screen: spec.screen,
-                     extensionId:that.extensionId};
-          L.Logger.debug(opt);
+                     extensionId: that.extensionId,
+                     desktopStreamId: that.desktopStreamId};
           Erizo.GetUserMedia(opt, function (stream) {
             //navigator.webkitGetUserMedia("audio, video", function (stream) {
 
@@ -5517,6 +5560,17 @@ Erizo.Stream = function (spec) {
 
             streamEvent = Erizo.StreamEvent({type: 'access-accepted'});
             that.dispatchEvent(streamEvent);
+
+            that.stream.getTracks().forEach(function(track) {
+                track.onended = function() {
+                    that.stream.getTracks().forEach(function(track) {
+                        track.onended = null;
+                    });
+                    streamEvent = Erizo.StreamEvent({type: 'stream-ended', stream: that,
+                    msg: track.kind});
+                    that.dispatchEvent(streamEvent);
+                };
+            });
 
           }, function (error) {
             L.Logger.error('Failed to get access to local media. Error code was ' +
@@ -5545,6 +5599,7 @@ Erizo.Stream = function (spec) {
             that.hide();
             if (that.stream !== undefined) {
                 that.stream.getTracks().forEach(function (track) {
+                    track.onended = null;
                     track.stop();
                 });
             }
@@ -5706,13 +5761,18 @@ Erizo.Stream = function (spec) {
     };
 
     controlHandler = function (handlers, publisherSide, enable) {
-      publisherSide = !(publisherSide !== true);
-      var handlers = (typeof handlers === 'string') ? [handlers] : handlers;
-      handlers = (handlers instanceof Array) ? handlers : [];
 
-      if (handlers.length > 0) {
-        that.room.sendControlMessage(that, 'control', {name: 'controlhandlers', enable: enable, publisherSide: publisherSide, handlers: handlers});
-      }
+        if (publisherSide !== true) publisherSide = false;
+
+        handlers = (typeof handlers === 'string') ? [handlers] : handlers;
+        handlers = (handlers instanceof Array) ? handlers : [];
+
+        if (handlers.length > 0) {
+            that.room.sendControlMessage(that, 'control', {name: 'controlhandlers',
+                                        enable: enable,
+                                        publisherSide: publisherSide,
+                                        handlers: handlers});
+        }
     };
 
     that.disableHandlers = function (handlers, publisherSide) {
@@ -5956,6 +6016,8 @@ Erizo.Room = function (spec) {
                 if (state === 'failed') {
                     myStream.pc[arg.peerSocket].close();
                     delete myStream.pc[arg.peerSocket];
+                } else if (state === 'disconnected') {
+                    // TODO handle behaviour. Myabe implement Ice-Restart mechanism
                 }
             };
 
@@ -6197,12 +6259,11 @@ Erizo.Room = function (spec) {
             options.minVideoBW = spec.defaultVideoBW;
         }
 
-        // TODO(javier): remove dangling once Simulcast is stable
-        options._simulcast = options._simulcast || false;
+        options.simulcast = options.simulcast || options._simulcast || false;
 
         // 1- If the stream is not local or it is a failed stream we do nothing.
-        if (stream && stream.local && !stream.failed
-          && that.localStreams[stream.getID()] === undefined) {
+        if (stream && stream.local && !stream.failed &&
+            that.localStreams[stream.getID()] === undefined) {
 
             // 2- Publish Media Stream to Erizo-Controller
             if (stream.hasAudio() || stream.hasVideo() || stream.hasScreen()) {
@@ -6331,7 +6392,7 @@ Erizo.Room = function (spec) {
                                maxVideoBW: options.maxVideoBW,
                                limitMaxAudioBW: spec.maxAudioBW,
                                limitMaxVideoBW: spec.maxVideoBW,
-                               simulcast: options._simulcast,
+                               simulcast: options.simulcast,
                                audio: stream.hasAudio(),
                                video: stream.hasVideo()});
 
@@ -6702,6 +6763,10 @@ L.Logger = (function (L) {
         NONE = 5,
         enableLogPanel,
         setLogLevel,
+        setOutputFunction,
+        setLogPrefix,
+        outputFunction,
+        logPrefix = '',
         log,
         debug,
         trace,
@@ -6731,10 +6796,22 @@ L.Logger = (function (L) {
         L.Logger.logLevel = level;
     };
 
+    outputFunction = function (args) {
+      console.log.apply(console, args);
+    };
+
+    setOutputFunction = function (newOutputFunction) {
+      outputFunction = newOutputFunction;
+    };
+
+    setLogPrefix = function (newLogPrefix) {
+      logPrefix = newLogPrefix;
+    };
+
     // Generic function to print logs for a given level:
     //  L.Logger.[DEBUG, TRACE, INFO, WARNING, ERROR]
     log = function (level) {
-        var out = '';
+        var out = logPrefix;
         if (level < L.Logger.logLevel) {
             return;
         }
@@ -6763,7 +6840,7 @@ L.Logger = (function (L) {
             }
             L.Logger.panel.value = L.Logger.panel.value + '\n' + tmp;
         } else {
-            console.log.apply(console, args);
+            outputFunction.apply(L.Logger, [args]);
         }
     };
 
@@ -6821,6 +6898,8 @@ L.Logger = (function (L) {
         NONE: NONE,
         enableLogPanel: enableLogPanel,
         setLogLevel: setLogLevel,
+        setOutputFunction: setOutputFunction,
+        setLogPrefix: setLogPrefix,
         log: log,
         debug: debug,
         trace: trace,
@@ -7559,7 +7638,7 @@ Erizo.VideoPlayer = function (spec) {
     // Container
     that.div = document.createElement('div');
     that.div.setAttribute('id', 'player_' + that.id);
-    that.div.setAttribute('class', 'player');
+    that.div.setAttribute('class', 'licode_player');
     that.div.setAttribute('style', 'width: 100%; height: 100%; position: relative; ' +
                                    'background-color: black; overflow: hidden;');
 
@@ -7569,14 +7648,14 @@ Erizo.VideoPlayer = function (spec) {
       that.loader.setAttribute('style', 'width: 16px; height: 16px; position: absolute; ' +
                                         'top: 50%; left: 50%; margin-top: -8px; margin-left: -8px');
       that.loader.setAttribute('id', 'back_' + that.id);
-      that.loader.setAttribute('class', 'loader');
+      that.loader.setAttribute('class', 'licode_loader');
       that.loader.setAttribute('src', that.url + '/assets/loader.gif');
     }
 
     // Video tag
     that.video = document.createElement('video');
     that.video.setAttribute('id', 'stream' + that.id);
-    that.video.setAttribute('class', 'stream');
+    that.video.setAttribute('class', 'licode_stream');
     that.video.setAttribute('style', 'width: 100%; height: 100%; position: absolute');
     that.video.setAttribute('autoplay', 'autoplay');
 
@@ -7665,7 +7744,7 @@ Erizo.AudioPlayer = function (spec) {
     // Audio tag
     that.audio = document.createElement('audio');
     that.audio.setAttribute('id', 'stream' + that.id);
-    that.audio.setAttribute('class', 'stream');
+    that.audio.setAttribute('class', 'licode_stream');
     that.audio.setAttribute('style', 'width: 100%; height: 100%; position: absolute');
     that.audio.setAttribute('autoplay', 'autoplay');
 
@@ -7695,7 +7774,7 @@ Erizo.AudioPlayer = function (spec) {
         // Container
         that.div = document.createElement('div');
         that.div.setAttribute('id', 'player_' + that.id);
-        that.div.setAttribute('class', 'player');
+        that.div.setAttribute('class', 'licode_player');
         that.div.setAttribute('style', 'width: 100%; height: 100%; position: relative; ' +
                               'overflow: hidden;');
 
@@ -7769,7 +7848,7 @@ Erizo.Bar = function (spec) {
     // Container
     that.div = document.createElement('div');
     that.div.setAttribute('id', 'bar_' + that.id);
-    that.div.setAttribute('class', 'bar');
+    that.div.setAttribute('class', 'licode_bar');
 
     // Bottom bar
     that.bar = document.createElement('div');
@@ -7777,18 +7856,18 @@ Erizo.Bar = function (spec) {
                                    'position: absolute; bottom: 0; right: 0; ' +
                                    'background-color: rgba(255,255,255,0.62)');
     that.bar.setAttribute('id', 'subbar_' + that.id);
-    that.bar.setAttribute('class', 'subbar');
+    that.bar.setAttribute('class', 'licode_subbar');
 
     // Lynckia icon
     that.link = document.createElement('a');
     that.link.setAttribute('href', 'http://www.lynckia.com/');
-    that.link.setAttribute('class', 'link');
+    that.link.setAttribute('class', 'licode_link');
     that.link.setAttribute('target', '_blank');
 
     that.logo = document.createElement('img');
     that.logo.setAttribute('style', 'width: 100%; height: 100%; max-width: 30px; ' +
                                     'position: absolute; top: 0; left: 2px;');
-    that.logo.setAttribute('class', 'logo');
+    that.logo.setAttribute('class', 'licode_logo');
     that.logo.setAttribute('alt', 'Lynckia');
     that.logo.setAttribute('src', that.url + '/assets/star.svg');
 
