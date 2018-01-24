@@ -580,7 +580,8 @@ const GetUserMedia = (config, callback = () => {}, error = () => {}) => {
         screenConfig = {};
         screenConfig.video = config.video || {};
         screenConfig.video.mandatory = config.video.mandatory || {};
-        screenConfig.video.mandatory.chromeMediaSource = 'screen';
+        screenConfig.video.mandatory.chromeMediaSource = 'desktop';
+        screenConfig.video.mandatory.chromeMediaSourceId = config.desktopStreamId;
         getUserMedia(screenConfig, callback, error);
         break;
       case 'mozilla':
@@ -5512,9 +5513,9 @@ const Socket = (newIo) => {
       socket.close();
     });
 
-    socket.on('connection_failed', () => {
+    socket.on('connection_failed', (evt) => {
       __WEBPACK_IMPORTED_MODULE_1__utils_Logger__["a" /* default */].error('connection failed, id:', that.id);
-      emit('connection_failed', { streamId: that.id });
+      emit('connection_failed', evt);
     });
     socket.on('error', (err) => {
       __WEBPACK_IMPORTED_MODULE_1__utils_Logger__["a" /* default */].warning('socket error, id:', that.id, ', error:', err.message);
